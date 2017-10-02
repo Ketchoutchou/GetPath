@@ -1,8 +1,8 @@
 Param(
-	[switch]$TestMode = $false,
+	[switch]$DontCheckUnexpandedDuplicates = $false,
 	#[switch]$Fix = $false,
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
-	[switch]$DontCheckUnexpandedDuplicates = $false
+	[switch]$TestMode = $false
 )
 
 Set-StrictMode -Version Latest
@@ -250,17 +250,17 @@ function Main {
 	}
 	$registryPathString = $systemRegistryPathString + "$separator" + $userRegistryPathString
 	# Extract BuildPathFromRegistry method?
-	$contextPathString = $env:PATH
+	$actualPathString = $env:PATH
 	# May have to trim last semicolon on Win10
 	
-	if ($testMode) {
+	if ($TestMode) {
 		$testPathString = @'
 		 C:\windows;;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
 '@
 		ShowPathLength $testPathString
 		ShowPorcelainPath $testPathString
 		$pathString = $testPathString
-	} elseif (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $contextPathString) {
+	} elseif (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
 		if ($userRegistryPathString) {
 			Write-Warning "User defined PATH environment variable is not recommended" # Warn users that fix will remove user path and move it to system path
 		}
@@ -269,9 +269,9 @@ function Main {
 		$pathString = $registryPathString
 	} else {
 		Write-Warning "PATH has been modified in this context (different from PATH stored in registry)" # Warn users that fix will be only applied to current context
-		ShowPathLength $contextPathString
-		ShowPorcelainPath $contextPathString
-		$pathString = $contextPathString
+		ShowPathLength $actualPathString
+		ShowPorcelainPath $actualPathString
+		$pathString = $actualPathString
 	}
 	if ($pathString) {
 		$pathEntries = $pathString.Split(';')
