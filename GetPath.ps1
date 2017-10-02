@@ -21,21 +21,42 @@ function GetPathFromRegistry {
 	
 	(Get-Item $regPath).GetValue('PATH','',[Microsoft.WIN32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
 }
-function ShowPorcelainPath { 
+function JoinSystemAndUserPath {
 	Param (
-		[String]$path
+		[String]$systemPath,
+		[String]$userPath
 	)
 	
-	if ($path) {
-		$color = "DarkGray"
-		$host.ui.RawUI.ForegroundColor = $color
-		echo "---------- PATH BEGIN ----------"
-		$host.ui.RawUI.ForegroundColor = "Gray"
-		$path.Split(';')
-		$host.ui.RawUI.ForegroundColor = $color
-		echo "----------- PATH END -----------"
-		$host.ui.RawUI.ForegroundColor = "Gray"
+	if (!$systemPath.EndsWith(';') -And $systemPath -And $userPath) {
+		$separator = ";"
+	} else {
+		$separator = ""
 	}
+	$systemPath + "$separator" + $userPath
+}
+function ShowPorcelainPath { 
+	Param (
+		[String]$systemPath,
+		[String]$userPath
+	)
+
+	$headerColor = "DarkGray"
+	$systemPathColor = "Gray"
+	$userPathColor = "Yellow"
+	
+	$host.ui.RawUI.ForegroundColor = $headerColor
+	echo "---------- PATH BEGIN ----------"
+	if ($systemPath) {
+		$host.ui.RawUI.ForegroundColor = $systemPathColor
+		$systemPath.Split(';')
+	}
+	if ($userPath) {
+		$host.ui.RawUI.ForegroundColor = $userPathColor
+		$userPath.Split(';')
+	}
+	$host.ui.RawUI.ForegroundColor = $headerColor
+	echo "----------- PATH END -----------"
+	$host.ui.RawUI.ForegroundColor = "Gray"
 }
 function ShowPathLength { 
 	Param (
@@ -243,29 +264,27 @@ function Main {
 	PSVersionCheck
 	$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
-	if (!$systemRegistryPathString.EndsWith(';') -And $userRegistryPathString) {
-		$separator = ";"
-	} else {
-		$separator = ""
-	}
-	$registryPathString = $systemRegistryPathString + "$separator" + $userRegistryPathString
-	# Extract BuildPathFromRegistry method?
+	
 	$actualPathString = $env:PATH
 	# May have to trim last semicolon on Win10
-	
+
 	if ($TestMode) {
-		$testPathString = @'
-		 C:\windows;;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
+		$systemRegistryPathString = @'
+		C:\windows;;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
 '@
-		ShowPathLength $testPathString
-		ShowPorcelainPath $testPathString
-		$pathString = $testPathString
-	} elseif (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
-		if ($userRegistryPathString) {
-			Write-Warning "User defined PATH environment variable is not recommended" # Warn users that fix will remove user path and move it to system path
-		}
+		$userRegistryPathString = @'
+C:\userpath
+'@
+	}
+
+	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
+	
+	if ($userRegistryPathString) {
+		Write-Warning "User defined PATH environment variable is not recommended" # Warn users that fix will remove user path and move it to system path
+	}
+	if ($TestMode -Or ([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
 		ShowPathLength $registryPathString
-		ShowPorcelainPath $registryPathString
+		ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
 		$pathString = $registryPathString
 	} else {
 		Write-Warning "PATH has been modified in this context (different from PATH stored in registry)" # Warn users that fix will be only applied to current context
