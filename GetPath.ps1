@@ -1,5 +1,8 @@
 Param(
 	[switch]$DontCheckUnexpandedDuplicates = $false,
+	[switch]$Version = $false,
+	#[switch]$ShortenAllPaths = $false,
+	#[switch]$RestoreLongPaths = $false,
 	#[switch]$Fix = $false,
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$TestMode = $false
@@ -8,10 +11,16 @@ Param(
 Set-StrictMode -Version Latest
 $color = $host.ui.RawUI.ForegroundColor
 
+function ShowVersion {
+	if ($Version) {
+		echo "GetPath version 1.1"
+		exit 0
+	}
+}
 function PSVersionCheck {
 	$currentVersion = $PSVersionTable.PSVersion.Major
 	if($currentVersion -lt 5){
-		Write-Warning "You are using PowerShell $currentVersion.0. Consider upgrading to PowerShell 5.0 at least."
+		Write-Warning "You are using PowerShell $currentVersion.0. Consider upgrading to PowerShell 5.0 at least for better performance."
 	}
 }
 function GetPathFromRegistry { 
@@ -19,7 +28,7 @@ function GetPathFromRegistry {
 		[parameter(Mandatory=$true)] [String]$regPath
 	)
 	
-	(Get-Item $regPath).GetValue('PATH','',[Microsoft.WIN32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+	(Get-Item $regPath).GetValue('PATH',$null,[Microsoft.WIN32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
 }
 function JoinSystemAndUserPath {
 	Param (
@@ -261,6 +270,7 @@ function ListIssues {
 	}
 }
 function Main {
+	ShowVersion
 	PSVersionCheck
 	$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
@@ -275,14 +285,15 @@ function Main {
 		$userRegistryPathString = @'
 C:\userpath
 '@
+		$actualPathString = [System.Environment]::ExpandEnvironmentVariables($(JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString))
 	}
-
-	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
 	
-	if ($userRegistryPathString) {
-		Write-Warning "User defined PATH environment variable is not recommended" # Warn users that fix will remove user path and move it to system path
-	}
-	if ($TestMode -Or ([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
+	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
+
+	if (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
+		if ($userRegistryPathString -is [String]) {
+			Write-Warning "User defined PATH environment variable is not recommended" # Warn users that fix will remove user path and move it to system path
+		}
 		ShowPathLength $registryPathString
 		ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
 		$pathString = $registryPathString
