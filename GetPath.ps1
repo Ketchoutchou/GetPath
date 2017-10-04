@@ -36,7 +36,7 @@ function JoinSystemAndUserPath {
 		[String]$userPath
 	)
 	
-	if (!$systemPath.EndsWith(';') -And $systemPath -And $userPath) {
+	if (!$systemPath.EndsWith(';') -And $systemPath -And $userPath -is [String]) {
 		$separator = ";"
 	} else {
 		$separator = ""
@@ -51,7 +51,7 @@ function ShowPorcelainPath {
 
 	$headerColor = "DarkGray"
 	$systemPathColor = "Gray"
-	$userPathColor = "Yellow"
+	$userPathColor = "White"
 	
 	$host.ui.RawUI.ForegroundColor = $headerColor
 	echo "---------- PATH BEGIN ----------"
@@ -59,7 +59,7 @@ function ShowPorcelainPath {
 		$host.ui.RawUI.ForegroundColor = $systemPathColor
 		$systemPath.Split(';')
 	}
-	if ($userPath) {
+	if ($userPath -is [String]) {
 		$host.ui.RawUI.ForegroundColor = $userPathColor
 		$userPath.Split(';')
 	}
@@ -187,12 +187,10 @@ function ListDuplicates {
 			$host.ui.RawUI.ForegroundColor = "Gray"
 			foreach ($pathCheckerEntry in $pathChecker) {
 				if ($pathCheckerEntry.PristinePath -eq $duplicate.Name) {
+					echo "    ->  $(DisplayPathEntryWithOrder $pathCheckerEntry)"
 					if ($pathCheckerEntry.UnexpandedEntry) {
-						$better = " - Unexpanded path entry. Use -DontCheckUnexpandedDuplicates to ignore" # if fix mode Use -FixEvenUnexpandedDuplicates to remove
-					} else {
-						$better = $null
+						echo "       - Unexpanded path entry. Use -DontCheckUnexpandedDuplicates to ignore" # if fix mode Use -FixEvenUnexpandedDuplicates to remove
 					}
-					echo "    ->  $(DisplayPathEntryWithOrder $pathCheckerEntry)$better"
 				}
 			}
 		}
@@ -241,7 +239,7 @@ function ListIssues {
 			$pathCheckerEntry.Issues.Add("MustNotEndWithSpace") | Out-Null
 		}
 		if ($pathCheckerEntry.OriginalPath.EndsWith('\')){
-			$pathCheckerEntry.Issues.Add("ShouldNotEndWithSlash") | Out-Null
+			$pathCheckerEntry.Issues.Add("ShouldNotEndWithBackslash") | Out-Null
 		}
 		if (!(Test-Path $pathCheckerEntry.OriginalPath -IsValid)){
 			$pathCheckerEntry.Issues.Add("ShouldBeValid") | Out-Null
@@ -291,8 +289,8 @@ C:\userpath
 	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
 
 	if (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
-		if ($userRegistryPathString -is [String]) {
-			Write-Warning "User defined PATH environment variable is not recommended" # Warn users that fix will remove user path and move it to system path
+		if ($userRegistryPathString -eq "") {
+			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
 		}
 		ShowPathLength $registryPathString
 		ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
