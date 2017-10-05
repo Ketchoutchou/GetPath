@@ -1,3 +1,36 @@
+<#
+.SYNOPSIS
+GetPath helps you detect and fix issues in your PATH environment variable on Windows
+
+.DESCRIPTION
+
+.PARAMETER DontCheckUnexpandedDuplicates
+Will not take variable based path entries into account
+
+.PARAMETER Version
+Will show the current version number
+
+.INPUTS
+None. You cannot pipe objects to GetPath (yet!)
+
+.OUTPUTS
+System.Int. GetPath returns a simple exit code based on the result of the analysis
+
+.EXAMPLE
+C:\PS> GetPath -DontCheckUnexpandedDuplicates
+Current PATH environment variable is 138 character long (maximum is 2047)
+---------- PATH BEGIN ----------
+%SystemRoot%\system32
+%SystemRoot%
+%SystemRoot%\System32\Wbem
+%SYSTEMROOT%\System32\WindowsPowerShell\v1.0
+C:\ProgramData\Oracle\Java\javapath
+----------- PATH END -----------
+
+.LINK
+https://github.com/Ketchoutchou/GetPath
+#>
+
 Param(
 	[switch]$DontCheckUnexpandedDuplicates = $false,
 	[switch]$Version = $false,
