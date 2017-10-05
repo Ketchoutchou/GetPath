@@ -5,6 +5,7 @@ Param(
 	#[switch]$RestoreLongPaths = $false,
 	#[switch]$Fix = $false,
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
+	[switch]$FromBatch = $false,
 	[switch]$TestMode = $false
 )
 
@@ -13,7 +14,7 @@ $color = $host.ui.RawUI.ForegroundColor
 
 function ShowVersion {
 	if ($Version) {
-		echo "GetPath version 1.1"
+		echo "GetPath version 1.2"
 		exit 0
 	}
 }
