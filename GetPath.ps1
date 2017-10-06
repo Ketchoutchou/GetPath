@@ -67,7 +67,7 @@ function GetPathFromRegistry {
 function JoinSystemAndUserPath {
 	Param (
 		[String]$systemPath,
-		[String]$userPath
+		$userPath
 	)
 	
 	if (!$systemPath.EndsWith(';') -And $systemPath -And $userPath -is [String]) {
@@ -80,7 +80,7 @@ function JoinSystemAndUserPath {
 function ShowPorcelainPath { 
 	Param (
 		[String]$systemPath,
-		[String]$userPath
+		$userPath
 	)
 
 	$headerColor = "DarkGray"
