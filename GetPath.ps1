@@ -312,7 +312,7 @@ function Main {
 
 	if ($TestMode) {
 		$systemRegistryPathString = @'
-		C:\windows;;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
+		C:\windows;;s:\;::;\\;s;s:;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
 '@
 		$userRegistryPathString = @'
 C:\userpath
@@ -348,12 +348,33 @@ C:\userpath
 		} else {
 			$unexpandedEntry = $false
 		}
+		$isNetworkPath = $null
+		$uncPath = $null
+		if ($pathEntry.Length -gt 1) {
+			$driveLetter = $pathEntry.SubString(0,2)
+			if ($driveLetter -match "[a-z]:") {
+				$uncDrive = (PSDrive $driveLetter.SubString(0,1)).DisplayRoot
+				if ($uncDrive -And [bool]([Uri]$uncDrive).IsUnc) {
+					$isNetworkPath = $true
+					$uncPath = $pathEntry.Replace($driveLetter,$uncDrive)
+				}
+			} else { # should test \\
+				$isNetworkPath = $true
+			}
+			if ($uncPath) {
+				$pristinePath = GetShortPathEntry($uncPath)
+			} else {
+				$pristinePath = GetShortPathEntry($pathEntry)
+			}
+		}
 		$pathChecker.Add(@{
 			EntryOrder = $entryOrder
 			OriginalPath = $pathEntry
 			UnexpandedEntry = $unexpandedEntry
-			PristinePath = GetShortPathEntry($pathEntry)
+			PristinePath = $pristinePath
 			Issues = [System.Collections.ArrayList]@()
+			IsNetworkPath = $isNetworkPath
+			UNCPath = $uncPath
 		}) | Out-Null
 		$entryOrder++
 	}
