@@ -361,7 +361,7 @@ C:\userpath
 	ListIssues($pathChecker)
 	
 <# DEBUG Helper
-	if($PSVersionTable.PSVersion.Major -gt 2) {
+	if($PSVersionTable.PSVersion.Major -gt 3) {
 		$pathChecker.ForEach({[PSCustomObject]$_}) | Format-Table -AutoSize
 	} else {
 		$(foreach ($ht in $pathChecker){new-object PSObject -Property $ht}) | Format-Table -AutoSize	
