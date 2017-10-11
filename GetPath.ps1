@@ -376,7 +376,7 @@ C:\userpath
 		$uncPath = $null
 		if ($pathEntry.Length -gt 1) {
 			$driveLetter = $pathEntry.SubString(0,2)
-			if ($driveLetter -match "[a-z]:") {
+			if ($driveLetter -match "[a-z]{1}:") {
 				$uncDrive = (PSDrive $driveLetter.SubString(0,1)).DisplayRoot
 				if ($uncDrive -And [bool]([Uri]$uncDrive).IsUnc) {
 					$isNetworkPath = $true
