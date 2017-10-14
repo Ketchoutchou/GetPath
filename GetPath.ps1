@@ -41,7 +41,7 @@ Param(
 	[switch]$FromBatch = $false,
 	[switch]$NoPause = $false,
 	[int]$ProcessID = -1,
-  [string]$ProcessName = "",
+	[string]$ProcessName = "",
 	#[switch]$RestoreLongPaths = $false,
 	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
