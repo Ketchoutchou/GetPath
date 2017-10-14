@@ -47,7 +47,6 @@ Param(
 )
 
 Set-StrictMode -Version Latest
-$color = $host.ui.RawUI.ForegroundColor
 
 function ShowVersion {
 	if ($Version) {
@@ -376,5 +375,9 @@ C:\userpath
 	}
 }
 
-Main
-$host.ui.RawUI.ForegroundColor = $color
+try {
+	$color = $host.ui.RawUI.ForegroundColor
+	Main
+} finally {
+	$host.ui.RawUI.ForegroundColor = $color
+}
