@@ -7,6 +7,9 @@ GetPath helps you detect and fix issues in your PATH environment variable on Win
 .PARAMETER DontCheckUnexpandedDuplicates
 Will not take variable based path entries into account
 
+.PARAMETER NoPause
+Will not wait for user key stroke before exiting
+
 .PARAMETER Version
 Will show the current version number
 
@@ -17,7 +20,7 @@ None. You cannot pipe objects to GetPath (yet!)
 System.Int. GetPath returns a simple exit code based on the result of the analysis
 
 .EXAMPLE
-C:\PS> GetPath -DontCheckUnexpandedDuplicates
+C:\PS> GetPath -DontCheckUnexpandedDuplicates -NoPause
 Current PATH environment variable is 138 character long (maximum is 2047)
 ---------- PATH BEGIN ----------
 %SystemRoot%\system32
@@ -33,19 +36,19 @@ https://github.com/Ketchoutchou/GetPath
 
 Param(
 	[switch]$DontCheckUnexpandedDuplicates = $false,
-	[string]$ProcessName = "",
-	[int]$ProcessID = -1,
-	[switch]$Version = $false,
-	#[switch]$ShortenAllPaths = $false,
-	#[switch]$RestoreLongPaths = $false,
 	#[switch]$Fix = $false,
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$FromBatch = $false,
-	[switch]$TestMode = $false
+	[switch]$NoPause = $false,
+	[int]$ProcessID = -1,
+  [string]$ProcessName = "",
+	#[switch]$RestoreLongPaths = $false,
+	#[switch]$ShortenAllPaths = $false,
+	[switch]$TestMode = $false,
+	[switch]$Version = $false
 )
 
 Set-StrictMode -Version Latest
-$color = $host.ui.RawUI.ForegroundColor
 
 function ShowVersion {
 	if ($Version) {
@@ -388,7 +391,14 @@ C:\userpath
 		$(foreach ($ht in $pathChecker){new-object PSObject -Property $ht}) | Format-Table -AutoSize	
 	}
 #>
+	if (!$NoPause) {
+		pause
+	}
 }
 
-Main
-$host.ui.RawUI.ForegroundColor = $color
+try {
+	$color = $host.ui.RawUI.ForegroundColor
+	Main
+} finally {
+	$host.ui.RawUI.ForegroundColor = $color
+}
