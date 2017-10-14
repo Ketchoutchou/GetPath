@@ -40,6 +40,8 @@ Param(
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$FromBatch = $false,
 	[switch]$NoPause = $false,
+	[int]$ProcessID = -1,
+  [string]$ProcessName = "",
 	#[switch]$RestoreLongPaths = $false,
 	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
@@ -313,6 +315,25 @@ function Main {
 	$actualPathString = $env:PATH
 	# May have to trim last semicolon on Win10
 
+	if ($ProcessID -ne -1 -Or $ProcessName -ne "") {
+		if($PSVersionTable.PSVersion.Major -gt 2) {
+			$scriptRoot = $PSScriptRoot
+		} else {
+			$scriptRoot = $MyInvocation.MyCommand.Path
+		}
+		if ($TestMode) {
+			$getExternalProcessPathExecutable = "GetExternalProcessPath.cmd"
+		} else {
+			$getExternalProcessPathExecutable = "GetExternalProcessPath.exe"
+		}
+		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
+			$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessID
+		} else {
+			echo "$getExternalProcessPathExecutable not found. Cannot get PATH of an external process."
+			exit -1
+		}
+	}
+	
 	if ($TestMode) {
 		$systemRegistryPathString = @'
 		C:\windows;;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
