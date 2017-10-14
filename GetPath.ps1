@@ -374,10 +374,11 @@ C:\userpath
 		}
 		$isNetworkPath = $null
 		$uncPath = $null
+		$driveList = (psdrive | select Name, DisplayRoot)
 		if ($pathEntry.Length -gt 1) {
 			$driveLetter = $pathEntry.SubString(0,2)
 			if ($driveLetter -match "[a-z]{1}:") {
-				$uncDrive = (PSDrive $driveLetter.SubString(0,1)).DisplayRoot
+				$uncDrive = $driveList | where name -eq $driveLetter.SubString(0,1) | select -ExpandProperty displayRoot
 				if ($uncDrive -And [bool]([Uri]$uncDrive).IsUnc) {
 					$isNetworkPath = $true
 					$uncPath = $pathEntry.Replace($driveLetter,$uncDrive)
