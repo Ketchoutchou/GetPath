@@ -5,13 +5,16 @@ GetPath helps you detect and fix issues in your PATH environment variable on Win
 .DESCRIPTION
 
 .PARAMETER DontCheckUnexpandedDuplicates
-Will not take variable based path entries into account
+Do not take variable-based path entries into account
 
 .PARAMETER NoPause
-Will not wait for user key stroke before exiting
+Do not wait for user key stroke before exiting
+
+.PARAMETER ProcessId
+Get PATH environment variable from another running process
 
 .PARAMETER Version
-Will show the current version number
+Show the current version number
 
 .INPUTS
 None. You cannot pipe objects to GetPath (yet!)
@@ -40,8 +43,8 @@ Param(
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$FromBatch = $false,
 	[switch]$NoPause = $false,
-	[int]$ProcessID = -1,
-	[string]$ProcessName = "",
+	[int]$ProcessId = -1,
+	#[string]$ProcessName = "",
 	#[switch]$RestoreLongPaths = $false,
 	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
@@ -315,7 +318,7 @@ function Main {
 	$actualPathString = $env:PATH
 	# May have to trim last semicolon on Win10
 
-	if ($ProcessID -ne -1 -Or $ProcessName -ne "") {
+	if ($ProcessId -ne -1 -Or $ProcessName -ne "") {
 		if($PSVersionTable.PSVersion.Major -gt 2) {
 			$scriptRoot = $PSScriptRoot
 		} else {
@@ -327,7 +330,10 @@ function Main {
 			$getExternalProcessPathExecutable = "GetExternalProcessPath.exe"
 		}
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
-			$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessID
+			$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessId
+			if ($externalProcessPathString) {
+				$actualPathString = $externalProcessPathString
+			}
 		} else {
 			echo "$getExternalProcessPathExecutable not found. Cannot get PATH of an external process."
 			exit -1
@@ -354,7 +360,11 @@ C:\userpath
 		ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
 		$pathString = $registryPathString
 	} else {
-		Write-Warning "PATH has been modified in this context (different from PATH stored in registry)" # Warn users that fix will be only applied to current context
+		if ($ProcessId -ne -1) {
+			Write-Warning "PATH has been modified in process $ProcessId (different from PATH stored in registry)" # Warn users that there will be no fix
+		} else {
+			Write-Warning "PATH has been modified in this context (different from PATH stored in registry)" # Warn users that fix will be only applied to current context
+		}
 		ShowPathLength $actualPathString
 		ShowPorcelainPath $actualPathString
 		$pathString = $actualPathString
