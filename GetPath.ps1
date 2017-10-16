@@ -393,7 +393,7 @@ C:\userpath
 					$isNetworkPath = $true
 					$uncPath = $pathEntry.Replace($driveLetter,$uncDrive)
 				}
-			} else { # should test \\
+			} elseif ($driveLetter -match "\\\\") {
 				$isNetworkPath = $true
 			}
 			if ($uncPath) {
