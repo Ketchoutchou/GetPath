@@ -318,7 +318,7 @@ function Main {
 	$actualPathString = $env:PATH
 	# May have to trim last semicolon on Win10
 
-	if ($ProcessId -ne -1 -Or $ProcessName -ne "") {
+	if ($ProcessId -ne -1<# -Or $ProcessName -ne ""#>) {
 		if($PSVersionTable.PSVersion.Major -gt 2) {
 			$scriptRoot = $PSScriptRoot
 		} else {
