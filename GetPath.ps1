@@ -384,6 +384,7 @@ C:\userpath
 		}
 		$isNetworkPath = $null
 		$uncPath = $null
+		$pristinePath = $null
 		$driveList = (psdrive | select Name, DisplayRoot)
 		if ($pathEntry.Length -gt 1) {
 			$driveLetter = $pathEntry.SubString(0,2)
@@ -395,6 +396,7 @@ C:\userpath
 				}
 			} elseif ($driveLetter -match "\\\\") {
 				$isNetworkPath = $true
+				$uncPath = $pathEntry
 			}
 			if ($uncPath) {
 				$pristinePath = GetShortPathEntry($uncPath)
