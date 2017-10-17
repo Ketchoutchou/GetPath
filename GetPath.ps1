@@ -7,9 +7,6 @@ GetPath helps you detect and fix issues in your PATH environment variable on Win
 .PARAMETER DontCheckUnexpandedDuplicates
 Do not take variable-based path entries into account
 
-.PARAMETER NoPause
-Do not wait for user key stroke before exiting
-
 .PARAMETER ProcessId
 Get PATH environment variable from another running process
 
@@ -23,7 +20,7 @@ None. You cannot pipe objects to GetPath (yet!)
 System.Int. GetPath returns a simple exit code based on the result of the analysis
 
 .EXAMPLE
-C:\PS> GetPath -DontCheckUnexpandedDuplicates -NoPause
+C:\PS> GetPath -DontCheckUnexpandedDuplicates
 Current PATH environment variable is 138 character long (maximum is 2047)
 ---------- PATH BEGIN ----------
 %SystemRoot%\system32
@@ -42,7 +39,6 @@ Param(
 	#[switch]$Fix = $false,
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$FromBatch = $false,
-	[switch]$NoPause = $false,
 	[int]$ProcessId = -1,
 	#[string]$ProcessName = "",
 	#[switch]$RestoreLongPaths = $false,
@@ -425,9 +421,6 @@ C:\userpath
 		$(foreach ($ht in $pathChecker){new-object PSObject -Property $ht}) | Format-Table -AutoSize	
 	}
 #>
-	if (!$NoPause) {
-		pause
-	}
 }
 
 try {
