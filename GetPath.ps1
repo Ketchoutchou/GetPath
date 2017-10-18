@@ -382,6 +382,8 @@ C:\userpath
 	}
 	$pathChecker = [System.Collections.ArrayList]@()
 	$entryOrder = 1
+	$driveList = Get-PSDrive -PSProvider FileSystem | Select-Object Name, DisplayRoot | Where-Object {$_.DisplayRoot -ne $null}
+
 	foreach($pathEntry in $pathEntries) {
 		Write-Progress "Analizing PATH entries" -Status "Running" -PercentComplete (($entryOrder-1)/$pathEntries.Count) -CurrentOperation $pathEntry
 		if ($pathEntry.Contains('%')){
@@ -392,11 +394,10 @@ C:\userpath
 		$isNetworkPath = $null
 		$uncPath = $null
 		$pristinePath = $null
-		$driveList = (psdrive | select Name, DisplayRoot)
 		if ($pathEntry.Length -gt 1) {
 			$driveLetter = $pathEntry.SubString(0,2)
 			if ($driveLetter -match "[a-z]{1}:") {
-				$uncDrive = $driveList | where name -eq $driveLetter.SubString(0,1) | select -ExpandProperty displayRoot
+				$uncDrive = $driveList | where Name -eq $driveLetter.SubString(0,1) | select -ExpandProperty DisplayRoot
 				if ($uncDrive -And [bool]([Uri]$uncDrive).IsUnc) {
 					$isNetworkPath = $true
 					$uncPath = $pathEntry.Replace($driveLetter,$uncDrive)
