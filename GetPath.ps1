@@ -396,7 +396,7 @@ C:\userpath
 		$pristinePath = $null
 		if ($pathEntry.Length -gt 1) {
 			$driveLetter = $pathEntry.SubString(0,2)
-			if ($driveLetter -match "[a-z]{1}:") {
+			if ($driveList -And $driveLetter -match "[a-z]{1}:") {
 				$uncDrive = $driveList | where Name -eq $driveLetter.SubString(0,1) | select -ExpandProperty DisplayRoot
 				if ($uncDrive -And [bool]([Uri]$uncDrive).IsUnc) {
 					$isNetworkPath = $true
