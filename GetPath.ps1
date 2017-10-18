@@ -52,6 +52,16 @@ Set-StrictMode -Version Latest
 function ShowVersion {
 	if ($Version) {
 		echo "GetPath version 1.2"
+		echo '@
+ $$$$$$\             $$\     $$$$$$$\            $$\     $$\       
+$$  __$$\            $$ |    $$  __$$\           $$ |    $$ |      
+$$ /  \__| $$$$$$\ $$$$$$\   $$ |  $$ |$$$$$$\ $$$$$$\   $$$$$$$\  
+$$ |$$$$\ $$  __$$\\_$$  _|  $$$$$$$  |\____$$\\_$$  _|  $$  __$$\ 
+$$ |\_$$ |$$$$$$$$ | $$ |    $$  ____/ $$$$$$$ | $$ |    $$ |  $$ |
+$$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
+\$$$$$$  |\$$$$$$$\  \$$$$  |$$ |     \$$$$$$$ | \$$$$  |$$ |  $$ |
+ \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__|
+@'
 		exit 0
 	}
 }
@@ -373,6 +383,7 @@ C:\userpath
 	$pathChecker = [System.Collections.ArrayList]@()
 	$entryOrder = 1
 	foreach($pathEntry in $pathEntries) {
+		Write-Progress "Analizing PATH entries" -Status "Running" -PercentComplete (($entryOrder-1)/$pathEntries.Count) -CurrentOperation $pathEntry
 		if ($pathEntry.Contains('%')){
 			$unexpandedEntry = $true
 		} else {
@@ -411,6 +422,7 @@ C:\userpath
 		}) | Out-Null
 		$entryOrder++
 	}
+	Write-Progress "Analizing PATH entries" -Status "Finished" -Completed
 	ListDuplicates($pathChecker)
 	ListIssues($pathChecker)
 	
