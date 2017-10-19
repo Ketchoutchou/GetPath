@@ -60,7 +60,7 @@ $$ |$$$$\ $$  __$$\\_$$  _|  $$$$$$$  |\____$$\\_$$  _|  $$  __$$\
 $$ |\_$$ |$$$$$$$$ | $$ |    $$  ____/ $$$$$$$ | $$ |    $$ |  $$ |
 $$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
 \$$$$$$  |\$$$$$$$\  \$$$$  |$$ |     \$$$$$$$ | \$$$$  |$$ |  $$ |
- \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__|
+ \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__| 1.3
 @'
 		exit 0
 	}
@@ -330,11 +330,7 @@ function Main {
 		} else {
 			$scriptRoot = $MyInvocation.MyCommand.Path
 		}
-		if ($TestMode) {
-			$getExternalProcessPathExecutable = "GetExternalProcessPath.cmd"
-		} else {
-			$getExternalProcessPathExecutable = "GetExternalProcessPath.exe"
-		}
+		$getExternalProcessPathExecutable = "GetExternalProcessPath.exe"
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
 			$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessId
 			if ($externalProcessPathString) {
@@ -382,10 +378,10 @@ C:\userpath
 	}
 	$pathChecker = [System.Collections.ArrayList]@()
 	$entryOrder = 1
-	$driveList = Get-PSDrive -PSProvider FileSystem | Select-Object Name, DisplayRoot | Where-Object {$_.DisplayRoot -ne $null}
+	$driveList = PSDrive -PSProvider FileSystem | Select Name, DisplayRoot | Where {$_.DisplayRoot -ne $null}
 
 	foreach($pathEntry in $pathEntries) {
-		Write-Progress "Analizing PATH entries" -Status "Running" -PercentComplete (($entryOrder-1)/$pathEntries.Count) -CurrentOperation $pathEntry
+		Write-Progress "Analizing PATH entries" -Status "Running" -PercentComplete (($entryOrder-1)/$pathEntries.Count*100) -CurrentOperation $pathEntry
 		if ($pathEntry.Contains('%')){
 			$unexpandedEntry = $true
 		} else {

@@ -1,2 +1,0 @@
-@echo off
-echo C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;C:\Users\Ketchoutchou\AppData\Local\GitHubDesktop\bin;C:\externalprocessstuff
