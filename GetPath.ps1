@@ -51,8 +51,8 @@ Set-StrictMode -Version Latest
 
 function ShowVersion {
 	if ($Version) {
-		echo "GetPath version 1.2"
 		echo '@
+		
  $$$$$$\             $$\     $$$$$$$\            $$\     $$\       
 $$  __$$\            $$ |    $$  __$$\           $$ |    $$ |      
 $$ /  \__| $$$$$$\ $$$$$$\   $$ |  $$ |$$$$$$\ $$$$$$\   $$$$$$$\  
@@ -61,6 +61,7 @@ $$ |\_$$ |$$$$$$$$ | $$ |    $$  ____/ $$$$$$$ | $$ |    $$ |  $$ |
 $$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
 \$$$$$$  |\$$$$$$$\  \$$$$  |$$ |     \$$$$$$$ | \$$$$  |$$ |  $$ |
  \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__| 1.3
+ 
 @'
 		exit 0
 	}
@@ -125,7 +126,6 @@ function ShowPathLength {
 	if ($expandedPathLength -gt 2047 ) {
 		$host.ui.RawUI.ForegroundColor = "Red"
 		Write-Warning "See https://software.intel.com/en-us/articles/limitation-to-the-length-of-the-system-path-variable"
-		# Should stop ?
 	} elseif (($expandedPathLength -eq 0)){
 		$host.ui.RawUI.ForegroundColor = "Red"
 	} elseif ($expandedPathLength -gt $warningLength) {
@@ -237,7 +237,6 @@ function ListDuplicates {
 				if ($pathCheckerEntry.PristinePath -eq $duplicate.Name) {
 					echo "    ->  $(DisplayPathEntryWithOrder $pathCheckerEntry)"
 					if ($pathCheckerEntry.UnexpandedEntry) {
-						echo "       - Unexpanded path entry. Use -DontCheckUnexpandedDuplicates to ignore" # if fix mode Use -FixEvenUnexpandedDuplicates to remove
 					}
 				}
 			}
@@ -307,7 +306,6 @@ function ListIssues {
 				echo " $(DisplayPathEntryWithOrder $pathCheckerEntry)"
 				$host.ui.RawUI.ForegroundColor = "Gray"
 				foreach ($warning in $pathCheckerEntry.Issues) {
-					# Find a way to Unicode characters (ex: [char]0x21B3)
 					echo "    ->  $warning"
 				}
 			}
@@ -322,7 +320,6 @@ function Main {
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
 	
 	$actualPathString = $env:PATH
-	# May have to trim last semicolon on Win10
 
 	if ($ProcessId -ne -1<# -Or $ProcessName -ne ""#>) {
 		if($PSVersionTable.PSVersion.Major -gt 2) {
