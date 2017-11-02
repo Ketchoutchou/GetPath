@@ -236,8 +236,6 @@ function ListDuplicates {
 			foreach ($pathCheckerEntry in $pathChecker) {
 				if ($pathCheckerEntry.PristinePath -eq $duplicate.Name) {
 					echo "    ->  $(DisplayPathEntryWithOrder $pathCheckerEntry)"
-					if ($pathCheckerEntry.UnexpandedEntry) {
-					}
 				}
 			}
 		}
