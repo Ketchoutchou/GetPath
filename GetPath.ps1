@@ -327,7 +327,7 @@ function Main {
 		} else {
 			$scriptRoot = $MyInvocation.MyCommand.Path
 		}
-		$getExternalProcessPathExecutable = "GetExternalProcessPath.exe"
+		$getExternalProcessPathExecutable = "GetExternalProcessEnv.exe"
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
 			$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessId
 			if ($externalProcessPathString) {
