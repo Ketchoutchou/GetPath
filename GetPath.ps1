@@ -413,13 +413,17 @@ function Main {
 				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessNameOrId
 				$exitCode = $LASTEXITCODE
 			}
+			if ($exitCode -eq -4) {
+				Write-Warning "Access to this process is denied. Please run as administrator."
+				exit -4
+			}
 			if ($exitCode -eq 0) {
 				$actualPathString = $externalProcessPathString
 			} else {
 				try {
-					$foundProcesses = Get-Process $ProcessNameOrId -ErrorAction 'Stop' | Select Name, Id
+					$foundProcesses = Get-Process $ProcessNameOrId -ErrorAction 'Stop'
 				} catch {
-					$processList = Get-Process | Select Name, Id
+					$processList = Get-Process
 					$foundProcesses = @()
 					foreach ($process in $processList) {
 						if ($process.Name -like "*$ProcessNameOrId*") {
@@ -443,6 +447,10 @@ function Main {
 				}
 				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
 				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $process.Id
+				if ($LASTEXITCODE -eq -4) {
+					Write-Warning "Access to this process is denied. Please run as administrator."
+					exit -4
+				}
 				$actualPathString = $externalProcessPathString
 			}
 		} else {
