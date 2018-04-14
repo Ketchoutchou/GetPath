@@ -390,6 +390,9 @@ function DisplayPath {
 					}
 					$i = $indexInRegistry + 1
 					$host.ui.RawUI.ForegroundColor = $colorBefore
+					echo "$prefix$($pathCheckerEntry.OriginalPath)"
+				} else {
+					$host.ui.RawUI.ForegroundColor = "Yellow"
 					echo "$prefix$($pathCheckerEntry.OriginalPath) (only present in this context, not in registry)"
 				}
 			}
@@ -463,7 +466,7 @@ function Main {
 					$process = $foundProcesses
 				}
 				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
-				$externalProcessPathString = $ $scriptRoot\$getExternalProcessPathExecutable $process.Id
+				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $process.Id
 				$actualPathString = $externalProcessPathString
 			}
 		} else {
@@ -494,9 +497,9 @@ C:\userpath
 		$pathString = $registryPathString
 	} else {
 		if ($ProcessNameOrId -ne "") {
-			Write-Warning "In the context of $($process.Name) (PID $($process.Id)), PATH is different from the one store in registry" # Warn users that there will be no fix
+			Write-Warning "In the context of $($process.Name) (PID $($process.Id)), PATH is different from the one stored in registry" # Warn users that there will be no fix
 		} else {
-			Write-Warning "In this context, PATH is different from the one store in registry" # Warn users that fix will be only applied to current context
+			Write-Warning "In this context, PATH is different from the one stored in registry" # Warn users that fix will be only applied to current context
 		}
 		ShowPathLength $actualPathString
 		#ShowPorcelainPath $actualPathString
