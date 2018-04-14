@@ -67,9 +67,10 @@ $$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
 	}
 }
 function PSVersionCheck {
-	$currentVersion = $PSVersionTable.PSVersion.Major
-	if($currentVersion -lt 5){
-		Write-Warning "You are using PowerShell $currentVersion.0. Consider upgrading to PowerShell 5.0 at least for better performance."
+	$majorVersion = $PSVersionTable.PSVersion.Major
+	$minorVersion = $PSVersionTable.PSVersion.Minor
+	if($majorVersion -lt 5){
+		Write-Warning "You are using PowerShell $majorVersion.$minorVersion. Consider upgrading to PowerShell 5.0 at least for better performance."
 	}
 }
 function GetPathFromRegistry { 
@@ -186,7 +187,7 @@ function GetFullPathEntry {
 	if ($pathEntry) {
 		$pathEntry = PrepareForTestPath($pathEntry)
 		if ($pathEntry -And (Test-Path $pathEntry -IsValid) -And (Test-Path $pathEntry)) {
-			return (Get-Item $pathEntry).FullName
+			return (Get-Item $pathEntry -Force).FullName
 		} else {
 			return $pathEntry.TrimEnd('\')
 		}
