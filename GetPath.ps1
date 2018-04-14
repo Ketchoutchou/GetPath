@@ -376,7 +376,7 @@ function DisplayPath {
 		
 		if (!$diffMode) {
 			echo "$prefix$($pathCheckerEntry.OriginalPath)"
-			$i = registryPathEntriesCount
+			$i = $registryPathEntriesCount
 		} else {
 			if ($i -lt $registryPathEntriesCount -And $pathCheckerEntry.OriginalPath -eq $registryPathEntries[$i]) {
 				echo "$prefix$($pathCheckerEntry.OriginalPath)"
