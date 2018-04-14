@@ -44,8 +44,9 @@ Param(
 	#[switch]$RestoreLongPaths = $false,
 	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
-	[switch]$Version = $false
-	[switch]$Verbatim = $false
+	[switch]$Verbatim = $false,
+	[switch]$Version = $false,
+	[string]$Where = ""
 )
 
 Set-StrictMode -Version Latest
@@ -337,16 +338,47 @@ function GetPathPrefix {
 }
 function DisplayPath {
 	Param (
-		[parameter(Mandatory=$true)] [System.Collections.ArrayList]$pathChecker
+		[parameter(Mandatory=$true)] [System.Collections.ArrayList]$pathChecker,
+		[string]$where
 	)
 	
+	$registryPathEntries = [System.Environment]::ExpandEnvironmentVariables($registryPathString).Split(';')
+	$registryPathEntriesCount = $registryPathEntries.Length
+	if ($FromBatch) {
+		$pathExtEntries = $PathExt.Split(';')
+	} else {
+		$pathExtEntries = $env:PathExt.Split(';')
+	}
 	foreach ($pathCheckerEntry in $pathChecker) {
 		if (!$Verbatim) {
 			$prefix = GetPathPrefix $pathCheckerEntry
 		} else {
 			$prefix = $null
 		}
+		
+		if ($where -ne "") {
+			$filelist = @()
+			$searchPattern = $pathCheckerEntry.PristinePath
+			$foundFiles = gci "$searchPattern\$where.*" -Force -Name -File -Depth 0
+			if ($foundFiles){
+				foreach ($pathExtEntry in $pathExtEntries) {
+					$fileList += gci $searchPattern -Force -Name -File -Include $where$pathExtEntry -Depth 0
+				}
+			}
+			$fileList += gci $searchPattern -Force -Name -File -Include "$where*" -Exclude $pathExtEntries.Replace('.',"*.") -Depth 0
+			if ($fileList) {
+				$host.ui.RawUI.ForegroundColor = "Magenta"
+			}
+		}
 			echo "$prefix$($pathCheckerEntry.OriginalPath"
+		$host.ui.RawUI.ForegroundColor = "DarkGray"
+		if ($where -ne "" -And $fileList) {
+			foreach ($file in $fileList) {
+				echo `t`t`t$file
+			}
+		}
+		$host.ui.RawUI.ForegroundColor = $colorBefore
+	}
 	}
 }
 function Main {
