@@ -339,9 +339,11 @@ function GetPathPrefix {
 function DisplayPath {
 	Param (
 		[parameter(Mandatory=$true)] [System.Collections.ArrayList]$pathChecker,
+		[bool]$diffMode,
 		[string]$where
 	)
 	
+	$i = 0
 	$registryPathEntries = [System.Environment]::ExpandEnvironmentVariables($registryPathString).Split(';')
 	$registryPathEntriesCount = $registryPathEntries.Length
 	if ($FromBatch) {
@@ -350,6 +352,7 @@ function DisplayPath {
 		$pathExtEntries = $env:PathExt.Split(';')
 	}
 	foreach ($pathCheckerEntry in $pathChecker) {
+		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
 			$prefix = GetPathPrefix $pathCheckerEntry
 		} else {
@@ -370,7 +373,27 @@ function DisplayPath {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
 			}
 		}
+		
+		if (!diffMode) {
 			echo "$prefix$($pathCheckerEntry.OriginalPath"
+			$i = registryPathEntriesCount
+		} else {
+			if ($i -lt $registryPathEntriesCount -And $pathCheckerEntry.OriginalPath -eq $registryPathEntries[$i]) {
+				echo "$prefix$($pathCheckerEntry.OriginalPath)"
+				$i++
+			} else {
+				$indexInRegistry = $registryPathEntries.IndexOf($pathCheckerEntry.OriginalPath)
+				if ($indexInRegistry -ne -1 -And $indexInRegistry -gt $i) {
+					for ($j = $i; $j -lt $indexInRegistry; $j++) {
+						$host.ui.RawUI.ForegroundColor = "Red"
+						echo "`t`t($($registryPathEntries[$j])) (not present in this context, only in registry)"
+					}
+					$i = $indexInRegistry + 1
+					$host.ui.RawUI.ForegroundColor = $colorBefore
+					echo "$prefix$($pathCheckerEntry.OriginalPath) (only present in this context, not in registry)"
+				}
+			}
+		}
 		$host.ui.RawUI.ForegroundColor = "DarkGray"
 		if ($where -ne "" -And $fileList) {
 			foreach ($file in $fileList) {
@@ -379,6 +402,12 @@ function DisplayPath {
 		}
 		$host.ui.RawUI.ForegroundColor = $colorBefore
 	}
+	if ($i -lt $registryPathEntriesCount) {
+		for ($j = $i; $j -lt $registryPathEntriesCount; $j++) {
+			$host.ui.RawUI.ForegroundColor = "Red"
+			echo "`t`t($($registryPathEntries[$j])) (not present in this context, only in registry)"
+		}
+		$host.ui.RawUI.ForegroundColor = $colorBefore
 	}
 }
 function Main {
@@ -455,6 +484,7 @@ C:\userpath
 	
 	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
 
+	$diffMode = $false
 	if (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
 		if ($userRegistryPathString -eq "") {
 			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
@@ -471,6 +501,7 @@ C:\userpath
 		ShowPathLength $actualPathString
 		#ShowPorcelainPath $actualPathString
 		$pathString = $actualPathString
+		$diffMode = $true
 	}
 	if ($pathString) {
 		$pathEntries = $pathString.Split(';')
