@@ -45,6 +45,7 @@ Param(
 	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
 	[switch]$Version = $false
+	[switch]$Verbatim = $false
 )
 
 Set-StrictMode -Version Latest
@@ -312,6 +313,42 @@ function ListIssues {
 		$host.ui.RawUI.ForegroundColor = "Gray"
 	}
 }
+function GetPathPrefix {
+	Param (
+		[parameter(Mandatory=$true)] $pathEntry
+	)
+	
+	$flags = "$($pathEntry.EntryOrder)`t"
+	if ($pathEntry.IsNetworkPath) {
+		$flags += "N"
+	} else {
+		$flags += "-"
+	}
+	if ($pathentry.UnexpandedEntry) {
+		$flags += "%"
+	} else {
+		$flags += "-"
+	}
+	#userpath
+	#duplicates
+	#issues
+	$flags += "`t"
+	$flags
+}
+function DisplayPath {
+	Param (
+		[parameter(Mandatory=$true)] [System.Collections.ArrayList]$pathChecker
+	)
+	
+	foreach ($pathCheckerEntry in $pathChecker) {
+		if (!$Verbatim) {
+			$prefix = GetPathPrefix $pathCheckerEntry
+		} else {
+			$prefix = $null
+		}
+			echo "$prefix$($pathCheckerEntry.OriginalPath"
+	}
+}
 function Main {
 	ShowVersion
 	PSVersionCheck
@@ -391,7 +428,7 @@ C:\userpath
 			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
 		}
 		ShowPathLength $registryPathString
-		ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
+		#ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
 		$pathString = $registryPathString
 	} else {
 		if ($ProcessNameOrId -ne "") {
@@ -400,7 +437,7 @@ C:\userpath
 			Write-Warning "In this context, PATH is different from the one store in registry" # Warn users that fix will be only applied to current context
 		}
 		ShowPathLength $actualPathString
-		ShowPorcelainPath $actualPathString
+		#ShowPorcelainPath $actualPathString
 		$pathString = $actualPathString
 	}
 	if ($pathString) {
@@ -452,6 +489,7 @@ C:\userpath
 		$entryOrder++
 	}
 	Write-Progress "Analizing PATH entries" -Status "Finished" -Completed
+	DisplayPath $pathChecker
 	ListDuplicates($pathChecker)
 	ListIssues($pathChecker)
 	
