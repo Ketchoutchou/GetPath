@@ -7,8 +7,8 @@ GetPath helps you detect and fix issues in your PATH environment variable on Win
 .PARAMETER DontCheckUnexpandedDuplicates
 Do not take variable-based path entries into account
 
-.PARAMETER ProcessId
-Get PATH environment variable from another running process
+.PARAMETER ProcessNameOrId
+Get PATH environment variable from another running process (id or approximate name)
 
 .PARAMETER Version
 Show the current version number
@@ -325,7 +325,7 @@ function GetPathPrefix {
 	} else {
 		$flags += "-"
 	}
-	if ($pathentry.UnexpandedEntry) {
+	if ($pathEntry.UnexpandedEntry) {
 		$flags += "%"
 	} else {
 		$flags += "-"
@@ -374,7 +374,7 @@ function DisplayPath {
 			}
 		}
 		
-		if (!diffMode) {
+		if (!$diffMode) {
 			echo "$prefix$($pathCheckerEntry.OriginalPath"
 			$i = registryPathEntriesCount
 		} else {
@@ -428,13 +428,13 @@ function Main {
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
 			$externalProcessPathString = $null
 			$exitCode = -666
-			if ($ProcessNameOrId -match '\d+$') {
+			if ($ProcessNameOrId -match '^\d+$') {
 				$process = Get-Process -Id $ProcessNameOrId
-				Write-Warning "Analizing process $($process.Name) (PID $($process.Id))"
+				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
 				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessNameOrId
 				$exitCode = $LASTEXITCODE
 			}
-			if (exitCode -eq 0) {
+			if ($exitCode -eq 0) {
 				$actualPathString = $externalProcessPathString
 			} else {
 				try {
@@ -449,7 +449,7 @@ function Main {
 					}
 				}
 				if ($foundProcesses -is [array]) {
-					if ^$foundProcesses.Length -gt 1) {
+					if ($foundProcesses.Length -gt 1) {
 						Write-Warning "Multiple processes found with name containing '$ProcessNameOrId':"
 						$foundProcesses
 						exit -1
@@ -513,7 +513,7 @@ C:\userpath
 	$driveList = PSDrive -PSProvider FileSystem | Select Name, DisplayRoot | Where {$_.DisplayRoot -ne $null}
 
 	foreach($pathEntry in $pathEntries) {
-		Write-Progress "Analizing PATH entries" -Status "Running" -PercentComplete (($entryOrder-1)/$pathEntries.Count*100) -CurrentOperation $pathEntry
+		Write-Progress "Analyzing PATH entries" -Status "Running" -PercentComplete (($entryOrder-1)/$pathEntries.Count*100) -CurrentOperation $pathEntry
 		if ($pathEntry.Contains('%')){
 			$unexpandedEntry = $true
 		} else {
@@ -551,8 +551,8 @@ C:\userpath
 		}) | Out-Null
 		$entryOrder++
 	}
-	Write-Progress "Analizing PATH entries" -Status "Finished" -Completed
-	DisplayPath $pathChecker
+	Write-Progress "Analyzing PATH entries" -Status "Finished" -Completed
+	DisplayPath $pathChecker $diffMode $Where
 	ListDuplicates($pathChecker)
 	ListIssues($pathChecker)
 	
