@@ -95,30 +95,6 @@ function JoinSystemAndUserPath {
 	}
 	$systemPath + "$separator" + $userPath
 }
-function ShowPorcelainPath { 
-	Param (
-		[String]$systemPath,
-		$userPath
-	)
-
-	$headerColor = "DarkGray"
-	$systemPathColor = "Gray"
-	$userPathColor = "White"
-	
-	$host.ui.RawUI.ForegroundColor = $headerColor
-	echo "---------- PATH BEGIN ----------"
-	if ($systemPath) {
-		$host.ui.RawUI.ForegroundColor = $systemPathColor
-		$systemPath.Split(';')
-	}
-	if ($userPath -is [String]) {
-		$host.ui.RawUI.ForegroundColor = $userPathColor
-		$userPath.Split(';')
-	}
-	$host.ui.RawUI.ForegroundColor = $headerColor
-	echo "----------- PATH END -----------"
-	$host.ui.RawUI.ForegroundColor = "Gray"
-}
 function ShowPathLength { 
 	Param (
 		[String]$path
@@ -493,7 +469,6 @@ C:\userpath
 			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
 		}
 		ShowPathLength $registryPathString
-		#ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
 		$pathString = $registryPathString
 	} else {
 		if ($ProcessNameOrId -ne "") {
@@ -502,7 +477,6 @@ C:\userpath
 			Write-Warning "In this context, PATH is different from the one stored in registry" # Warn users that fix will be only applied to current context
 		}
 		ShowPathLength $actualPathString
-		#ShowPorcelainPath $actualPathString
 		$pathString = $actualPathString
 		$diffMode = $true
 	}
