@@ -39,8 +39,8 @@ Param(
 	#[switch]$Fix = $false,
 	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$FromBatch = $false,
-	[int]$ProcessId = -1,
-	#[string]$ProcessName = "",
+	[string]$PathExt = "",
+	[string]$ProcessNameOrId = "",
 	#[switch]$RestoreLongPaths = $false,
 	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
@@ -320,7 +320,7 @@ function Main {
 	
 	$actualPathString = $env:PATH
 
-	if ($ProcessId -ne -1<# -Or $ProcessName -ne ""#>) {
+	if ($ProcessNameOrId -ne "") {
 		if($PSVersionTable.PSVersion.Major -gt 2) {
 			$scriptRoot = $PSScriptRoot
 		} else {
@@ -328,12 +328,48 @@ function Main {
 		}
 		$getExternalProcessPathExecutable = "GetExternalProcessEnv.exe"
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
-			$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessId
-			if ($externalProcessPathString) {
+			$externalProcessPathString = $null
+			$exitCode = -666
+			if ($ProcessNameOrId -match '\d+$') {
+				$process = Get-Process -Id $ProcessNameOrId
+				Write-Warning "Analizing process $($process.Name) (PID $($process.Id))"
+				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessNameOrId
+				$exitCode = $LASTEXITCODE
+			}
+			if (exitCode -eq 0) {
+				$actualPathString = $externalProcessPathString
+			} else {
+				try {
+					$foundProcesses = Get-Process $ProcessNameOrId -ErrorAction 'Stop' | Select Name, Id
+				} catch {
+					$processList = Get-Process | Select Name, Id
+					$foundProcesses = @()
+					foreach ($process in $processList) {
+						if ($process.Name -like "*$ProcessNameOrId*") {
+							$foundProcesses += $process
+						}
+					}
+				}
+				if ($foundProcesses -is [array]) {
+					if ^$foundProcesses.Length -gt 1) {
+						Write-Warning "Multiple processes found with name containing '$ProcessNameOrId':"
+						$foundProcesses
+						exit -1
+					}
+					if ($foundProcesses.Length -eq 0) {
+						Write-Warning "No process found with name containing '$ProcessNameOrId'"
+						exit -1
+					}
+					$process = $foundProcesses[0]
+				} else {
+					$process = $foundProcesses
+				}
+				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
+				$externalProcessPathString = $ $scriptRoot\$getExternalProcessPathExecutable $process.Id
 				$actualPathString = $externalProcessPathString
 			}
 		} else {
-			echo "$getExternalProcessPathExecutable not found. Cannot get PATH of an external process."
+			Write-Warning "$getExternalProcessPathExecutable not found. Cannot get PATH of an external process."
 			exit -1
 		}
 	}
@@ -358,10 +394,10 @@ C:\userpath
 		ShowPorcelainPath $systemRegistryPathString $userRegistryPathString
 		$pathString = $registryPathString
 	} else {
-		if ($ProcessId -ne -1) {
-			Write-Warning "PATH has been modified in process $ProcessId (different from PATH stored in registry)" # Warn users that there will be no fix
+		if ($ProcessNameOrId -ne "") {
+			Write-Warning "In the context of $($process.Name) (PID $($process.Id)), PATH is different from the one store in registry" # Warn users that there will be no fix
 		} else {
-			Write-Warning "PATH has been modified in this context (different from PATH stored in registry)" # Warn users that fix will be only applied to current context
+			Write-Warning "In this context, PATH is different from the one store in registry" # Warn users that fix will be only applied to current context
 		}
 		ShowPathLength $actualPathString
 		ShowPorcelainPath $actualPathString
