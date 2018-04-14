@@ -389,6 +389,15 @@ function DisplayPath {
 		$host.ui.RawUI.ForegroundColor = $colorBefore
 	}
 }
+function OpenProcessExplorerOffer {
+	[string]$processFinder = Read-Host "Need help? Type 'procexp' or 'pslist'"
+	if ($processFinder -eq "pslist") {
+		& pslist -t
+	}
+	if ($processFinder -eq "procexp") {
+		& procexp
+	}
+}
 function Main {
 	ShowVersion
 	PSVersionCheck
@@ -433,9 +442,31 @@ function Main {
 				}
 				if ($foundProcesses -is [array]) {
 					if ($foundProcesses.Length -gt 1) {
-						Write-Warning "Multiple processes found with name containing '$ProcessNameOrId':"
-						$foundProcesses
-						exit -1
+						Write-Warning "Multiple processes found with name containing '$ProcessNameOrId' (most recent first):"
+						$foundProcesses | Add-Member TryStartTime " ACCESS DENIED"
+						foreach ($foundProcess in $foundProcesses) {
+							if ($foundProcess.StartTime) {
+								$foundProcess.TryStartTime = $foundProcess.StartTime
+							}
+						}
+						$foundProcesses | Sort TryStartTime -Desc | Format-Table Id, Name, TryStartTime, MainWindowTitle
+						do {
+							try {
+								$InputOK = $true
+								[int]$pid = Read-Host "Choose a process id"
+								if ($pid -eq "") {
+									$InputOK = $false
+									OpenProcessExplorerOffer
+								}
+							} catch {
+								$InputOK = $false
+								OpenProcessExplorerOffer
+							}
+						}
+						while (!$InputOK)
+						# will do better
+						& $scriptRoot\GetPath.ps1 -ProcessNameOrId $pid
+						exit 0
 					}
 					if ($foundProcesses.Length -eq 0) {
 						Write-Warning "No process found with name containing '$ProcessNameOrId'"
