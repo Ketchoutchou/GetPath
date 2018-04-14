@@ -338,13 +338,13 @@ function DisplayPath {
 		if ($where -ne "") {
 			$filelist = @()
 			$searchPattern = $pathCheckerEntry.PristinePath
-			$foundFiles = gci "$searchPattern\$where.*" -Force -Name -File -Depth 0
+			$foundFiles = gci "$searchPattern\$where.*" -Force -File | Select Name
 			if ($foundFiles){
 				foreach ($pathExtEntry in $pathExtEntries) {
-					$fileList += gci $searchPattern -Force -Name -File -Include $where$pathExtEntry -Depth 0
+					$fileList += gci "$searchPattern\$where.*" -Force -File -Include $where$pathExtEntry | Select Name
 				}
 			}
-			$fileList += gci $searchPattern -Force -Name -File -Include "$where*" -Exclude $pathExtEntries.Replace('.',"*.") -Depth 0
+			$fileList += gci "$searchPattern\$where*" -Force -File -Filter "$where.*." -Exclude $pathExtEntries.Replace('.',"*.") | Select Name
 			if ($fileList) {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
 			}
@@ -376,7 +376,7 @@ function DisplayPath {
 		$host.ui.RawUI.ForegroundColor = "DarkGray"
 		if ($where -ne "" -And $fileList) {
 			foreach ($file in $fileList) {
-				echo `t`t`t$file
+				echo "`t`t`t$($file.Name)"
 			}
 		}
 		$host.ui.RawUI.ForegroundColor = $colorBefore
