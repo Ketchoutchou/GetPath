@@ -54,7 +54,7 @@ Set-StrictMode -Version Latest
 function ShowVersion {
 	if ($Version) {
 		echo @'
-		
+
  $$$$$$\             $$\     $$$$$$$\            $$\     $$\       
 $$  __$$\            $$ |    $$  __$$\           $$ |    $$ |      
 $$ /  \__| $$$$$$\ $$$$$$\   $$ |  $$ |$$$$$$\ $$$$$$\   $$$$$$$\  
@@ -63,7 +63,7 @@ $$ |\_$$ |$$$$$$$$ | $$ |    $$  ____/ $$$$$$$ | $$ |    $$ |  $$ |
 $$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
 \$$$$$$  |\$$$$$$$\  \$$$$  |$$ |     \$$$$$$$ | \$$$$  |$$ |  $$ |
  \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__| 2.0
- 
+
 '@
 		exit 0
 	}
@@ -375,7 +375,7 @@ function DisplayPath {
 		}
 		
 		if (!$diffMode) {
-			echo "$prefix$($pathCheckerEntry.OriginalPath"
+			echo "$prefix$($pathCheckerEntry.OriginalPath)"
 			$i = registryPathEntriesCount
 		} else {
 			if ($i -lt $registryPathEntriesCount -And $pathCheckerEntry.OriginalPath -eq $registryPathEntries[$i]) {
