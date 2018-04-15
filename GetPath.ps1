@@ -327,6 +327,7 @@ function DisplayPath {
 	} else {
 		$pathExtEntries = $env:PathExt.Split(';')
 	}
+	#where in current directory
 	foreach ($pathCheckerEntry in $pathChecker) {
 		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
@@ -342,7 +343,6 @@ function DisplayPath {
 			if ($foundFiles){
 				foreach ($pathExtEntry in $pathExtEntries) {
 					if ($where -like "*$pathExtEntry") {
-						echo good
 						$filter = "$where.*."
 					} else {
 						$filter = "$where$pathExtEntry"
