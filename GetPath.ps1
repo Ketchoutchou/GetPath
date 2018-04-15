@@ -338,10 +338,16 @@ function DisplayPath {
 		if ($where -ne "") {
 			$filelist = @()
 			$searchPattern = $pathCheckerEntry.PristinePath
-			$foundFiles = gci "$searchPattern\$where.*" -Force -File | Select Name
+			$foundFiles = gci "$searchPattern\$where*" -Force -File | Select Name
 			if ($foundFiles){
 				foreach ($pathExtEntry in $pathExtEntries) {
-					$fileList += gci "$searchPattern\$where.*" -Force -File -Include $where$pathExtEntry | Select Name
+					if ($where -like "*$pathExtEntry") {
+						echo good
+						$filter = "$where.*."
+					} else {
+						$filter = "$where$pathExtEntry"
+					}
+					$fileList += gci "$searchPattern\$where*" -Force -File -Filter $filter -Include $pathExtEntry.Replace('.',"*.") | Select Name
 				}
 			}
 			$fileList += gci "$searchPattern\$where*" -Force -File -Filter "$where.*." -Exclude $pathExtEntries.Replace('.',"*.") | Select Name
