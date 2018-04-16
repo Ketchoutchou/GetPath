@@ -413,10 +413,10 @@ function DisplayPath {
 function OpenProcessExplorerOffer {
 	[string]$processFinder = Read-Host "Need help? Type 'procexp' or 'pslist'"
 	if ($processFinder -eq "pslist") {
-		& pslist -t
+		& pslist -t -accepteula
 	}
 	if ($processFinder -eq "procexp") {
-		& procexp
+		& procexp -accepteula
 	}
 }
 function Main {
