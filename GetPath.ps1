@@ -327,7 +327,8 @@ function DisplayPath {
 	} else {
 		$pathExtEntries = $env:PathExt.Split(';')
 	}
-	#where in current directory
+	# TODO: where in current directory
+	# TODO: hardcode cmd and powershell order and run only one gci (if faster)
 	foreach ($pathCheckerEntry in $pathChecker) {
 		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
@@ -339,18 +340,32 @@ function DisplayPath {
 		if ($where -ne "") {
 			$filelist = @()
 			$searchPattern = $pathCheckerEntry.PristinePath
-			$foundFiles = gci "$searchPattern\$where*" -Force -File | Select Name
+			$withoutExtensionDone = $false
+			if (!$FromBatch) {
+				if ($(Test-Path "$searchPattern\$where") -And $where -like "*.ps1") {
+					$fileList += gci "$searchPattern" -Force -File -Filter "$where" | Select Name
+					$withoutExtensionDone = $true
+				}
+				$fileList += gci "$searchPattern" -Force -File -Filter "$where.ps1" | Select Name
+			}
+			if ($FromBatch -And $where -like "*.*") {
+				$fileList += gci "$searchPattern" -Force -File -Filter "$where" | Select Name
+			}
+			$foundFiles = gci "$searchPattern\$where.*" -Force -File | Select Name
 			if ($foundFiles){
 				foreach ($pathExtEntry in $pathExtEntries) {
 					if ($where -like "*$pathExtEntry") {
 						$filter = "$where.*."
+						$withoutExtensionDone = $true
 					} else {
 						$filter = "$where$pathExtEntry"
 					}
-					$fileList += gci "$searchPattern\$where*" -Force -File -Filter $filter -Include $pathExtEntry.Replace('.',"*.") | Select Name
+					$fileList += gci "$searchPattern" -Force -File -Filter $filter | Select Name
 				}
 			}
-			$fileList += gci "$searchPattern\$where*" -Force -File -Filter "$where.*." -Exclude $pathExtEntries.Replace('.',"*.") | Select Name
+			if (!$FromBatch -And !$withoutExtensionDone) {
+				$fileList += gci "$searchPattern" -Force -File -Filter "$where" | Select Name
+			}
 			if ($fileList) {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
 			}
