@@ -355,7 +355,7 @@ function DisplayPath {
 			$prefix = $null
 		}
 		
-		if (!$Verbatim) -And $where -ne "") {
+		if (!$Verbatim -And $where -ne "") {
 			$searchPattern = $pathCheckerEntry.PristinePath
 			$foundFileList = @()
 			$fileList = gci -Force -File $searchPattern -Filter $filter
