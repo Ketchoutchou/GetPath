@@ -353,7 +353,7 @@ function GetPathPrefix {
 	#userpath
 	#duplicates
 	#issues
-	$flags += "`t"
+	$flags += "`t  "
 	$flags
 }
 function DisplayPath {
@@ -456,14 +456,14 @@ function DisplayPath {
 				if ($indexInRegistry -ne -1 -And $indexInRegistry -gt $i) {
 					for ($j = $i; $j -lt $indexInRegistry; $j++) {
 						$host.ui.RawUI.ForegroundColor = "Red"
-						echo "`t`t($($registryPathEntries[$j])) (not present in this context, only in registry)"
+						echo "`t`t- $($registryPathEntries[$j]) (not present in this context; only in registry)"
 					}
 					$i = $indexInRegistry + 1
 					$host.ui.RawUI.ForegroundColor = $colorBefore
 					echo "$prefix$($pathCheckerEntry.OriginalPath)"
 				} else {
 					$host.ui.RawUI.ForegroundColor = "Yellow"
-					echo "$prefix$($pathCheckerEntry.OriginalPath) (only present in this context, not in registry)"
+					echo "$($prefix.TrimEnd("  "))+ $($pathCheckerEntry.OriginalPath) (only present in this context; not in registry)"
 				}
 			}
 		}
@@ -488,7 +488,7 @@ function DisplayPath {
 	if ($i -lt $registryPathEntriesCount) {
 		for ($j = $i; $j -lt $registryPathEntriesCount; $j++) {
 			$host.ui.RawUI.ForegroundColor = "Red"
-			echo "`t`t($($registryPathEntries[$j])) (not present in this context, only in registry)"
+			echo "`t`t- $($registryPathEntries[$j]) (not present in this context; only in registry)"
 		}
 		$host.ui.RawUI.ForegroundColor = $colorBefore
 	}
