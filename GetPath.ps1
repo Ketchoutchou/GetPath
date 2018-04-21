@@ -28,9 +28,6 @@ https://github.com/Ketchoutchou/GetPath
 
 [CmdletBinding()]
 Param(
-	# Get PATH environment variable from another running process in real time (using process id or approximate name).
-	[string] $ProcessNameOrId = "",
-	
 	# Do not take variable-based path entries into account.
 	[switch] $DontCheckUnexpandedDuplicates = $false,
 
@@ -42,6 +39,10 @@ Param(
 	[Parameter(DontShow)]
 	[string] $PathExt = "",
 
+	# Get PATH environment variable from another running process in real time (using process id or approximate name).
+	[Parameter(Position=0, ValueFromPipeline)]
+	[string] $ProcessNameOrId = "",
+	
 	# Internal parameter used for testing.
 	[Parameter(DontShow)]
 	[switch] $TestMode = $false,
