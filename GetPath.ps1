@@ -3,15 +3,7 @@
 GetPath helps you detect and fix issues in your PATH environment variable on Windows
 
 .DESCRIPTION
-
-.PARAMETER DontCheckUnexpandedDuplicates
-Do not take variable-based path entries into account
-
-.PARAMETER ProcessNameOrId
-Get PATH environment variable from another running process (id or approximate name)
-
-.PARAMETER Version
-Show the current version number
+and so much more
 
 .INPUTS
 None. You cannot pipe objects to GetPath (yet!)
@@ -34,16 +26,39 @@ C:\ProgramData\Oracle\Java\javapath
 https://github.com/Ketchoutchou/GetPath
 #>
 
+[CmdletBinding()]
 Param(
-	[switch]$DontCheckUnexpandedDuplicates = $false,
-	[switch]$FromBatch = $false,
-	[string]$PathExt = "",
-	[string]$ProcessNameOrId = "",
-	[switch]$TestMode = $false,
-	[switch]$Verbatim = $false,
-	[switch]$Version = $false,
-	[string]$Where = ""
+	# Get PATH environment variable from another running process in real time (using process id or approximate name).
 	[string] $ProcessNameOrId = "",
+	
+	# Do not take variable-based path entries into account.
+	[switch] $DontCheckUnexpandedDuplicates = $false,
+
+	# Internal parameter to know if GetPath has been launched using GetPath.cmd.
+	[Parameter(DontShow)]
+	[switch] $FromBatch = $false,
+	
+	# Internal parameter (used if GetPath has been launched using GetPath.cmd) to retrieve PathExt environment variable value from cmd.exe.
+	[Parameter(DontShow)]
+	[string] $PathExt = "",
+
+	# Internal parameter used for testing.
+	[Parameter(DontShow)]
+	[switch] $TestMode = $false,
+	
+	# Remove any prefix when displaying PATH entries.
+	# Good for copy/pasting.
+	[Alias("Porcelain", "NoPrefix")]
+	[switch] $Verbatim = $false,
+	
+	# Show the current version number
+	[Alias("About")]
+	[switch] $Version = $false,
+	
+	# Find all occurrences of an executable in the current context PATH
+	# This parameter supports bulk search using wildcards.
+	[Alias("Which", "Search")]
+	[string] $Where = ""
 )
 
 Set-StrictMode -Version Latest
@@ -329,7 +344,7 @@ function DisplayPath {
 	if ($containsWildcard) {
 		$filter = $where
 	} else {
-		$filter ="$where*"
+		$filter = "$where*"
 	}
 	# TODO: where in current directory (warning: need to use .\ notation for powershell)
 	foreach ($pathCheckerEntry in $pathChecker) {
