@@ -63,6 +63,32 @@ Param(
 
 Set-StrictMode -Version Latest
 
+if ($DebugPreference -eq "Inquire") {
+	$DebugPreference = "Continue"
+	Write-Debug "Switching DebugPreference to Continue"
+}
+
+Class Chrono {
+	[String] $Comment
+	[DateTime] $Chrono
+	[Int] $ShowLongerThan
+	
+	Chrono ([String] $Comment, [Int] $ShowLongerThan) {
+		$this.Comment = $Comment
+		$this.ShowLongerThan = $ShowLongerThan
+		$this.Chrono = Get-Date
+		Write-Verbose "'$($this.Comment)' started on $($this.Chrono)"
+	}
+	
+	Stop() {
+		$duration = $(Get-Date) - $this.Chrono
+		$totalTime = $duration.TotalMilliseconds
+		if ($totalTime -gt $this.ShowLongerThan) {
+			Write-Debug "'$($this.Comment)' took $($totalTime.ToString('#')) ms"
+		}
+	}
+}
+
 function ShowVersion {
 	if ($Version) {
 		echo @'
@@ -358,8 +384,11 @@ function DisplayPath {
 		if (!$Verbatim -And $where -ne "") {
 			$searchPattern = $pathCheckerEntry.PristinePath
 			$foundFileList = @()
+			$chrono = [Chrono]::new("GCI", 20)
 			$fileList = gci -Force -File $searchPattern -Filter $filter
+			$chrono.Stop()
 			if (!$containsWildcard) {
+				$chrono = [Chrono]::new("Where", 20)
 				if ($containsDot) {
 					foreach ($file in $fileList) {
 						if ($file.Name -like $where) {
@@ -394,9 +423,12 @@ function DisplayPath {
 						}
 					}
 				}
+				$chrono.Stop()
 			} else {
 				if ($pathCheckerEntry.IsNetworkPath) {
+					$chrono = [Chrono]::new("Sort", 20)
 					$foundFileList = $fileList | Sort
+					$chrono.Stop()
 				} else {
 					$foundFileList = $fileList
 				}
