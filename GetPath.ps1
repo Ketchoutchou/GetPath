@@ -345,6 +345,11 @@ function GetPathPrefix {
 	} else {
 		$flags += "-"
 	}
+	if ($pathEntry.OriginalPath -like "*~*") {
+		$flags += "8"
+	} else {
+		$flags += "-"
+	}
 	#userpath
 	#duplicates
 	#issues
