@@ -36,17 +36,14 @@ https://github.com/Ketchoutchou/GetPath
 
 Param(
 	[switch]$DontCheckUnexpandedDuplicates = $false,
-	#[switch]$Fix = $false,
-	#[switch]$FixEvenUnexpandedDuplicates = $false,
 	[switch]$FromBatch = $false,
 	[string]$PathExt = "",
 	[string]$ProcessNameOrId = "",
-	#[switch]$RestoreLongPaths = $false,
-	#[switch]$ShortenAllPaths = $false,
 	[switch]$TestMode = $false,
 	[switch]$Verbatim = $false,
 	[switch]$Version = $false,
 	[string]$Where = ""
+	[string] $ProcessNameOrId = "",
 )
 
 Set-StrictMode -Version Latest
@@ -327,8 +324,14 @@ function DisplayPath {
 	} else {
 		$pathExtEntries = $env:PathExt.Split(';')
 	}
-	# TODO: where in current directory
-	# TODO: hardcode cmd and powershell order and run only one gci (if faster)
+	$containsDot = $where -like "*.*"
+	$containsWildcard = $where -match "\*"
+	if ($containsWildcard) {
+		$filter = $where
+	} else {
+		$filter ="$where*"
+	}
+	# TODO: where in current directory (warning: need to use .\ notation for powershell)
 	foreach ($pathCheckerEntry in $pathChecker) {
 		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
@@ -337,36 +340,53 @@ function DisplayPath {
 			$prefix = $null
 		}
 		
-		if ($where -ne "") {
-			$filelist = @()
+		if (!$Verbatim) -And $where -ne "") {
 			$searchPattern = $pathCheckerEntry.PristinePath
-			$withoutExtensionDone = $false
-			if (!$FromBatch) {
-				if ($(Test-Path "$searchPattern\$where") -And $where -like "*.ps1") {
-					$fileList += gci "$searchPattern" -Force -File -Filter "$where" | Select Name
-					$withoutExtensionDone = $true
-				}
-				$fileList += gci "$searchPattern" -Force -File -Filter "$where.ps1" | Select Name
-			}
-			if ($FromBatch -And $where -like "*.*") {
-				$fileList += gci "$searchPattern" -Force -File -Filter "$where" | Select Name
-			}
-			$foundFiles = gci "$searchPattern\$where.*" -Force -File | Select Name
-			if ($foundFiles){
-				foreach ($pathExtEntry in $pathExtEntries) {
-					if ($where -like "*$pathExtEntry") {
-						$filter = "$where.*."
-						$withoutExtensionDone = $true
-					} else {
-						$filter = "$where$pathExtEntry"
+			$foundFileList = @()
+			$fileList = gci -Force -File $searchPattern -Filter $filter
+			if (!$containsWildcard) {
+				if ($containsDot) {
+					foreach ($file in $fileList) {
+						if ($file.Name -like $where) {
+							$foundFileList += $file
+							continue
+						}
 					}
-					$fileList += gci "$searchPattern" -Force -File -Filter $filter | Select Name
+				}
+				if (!$FromBatch) {
+					foreach ($file in $fileList) {
+						if ($file.Name -like "$where.ps1") {
+							$foundFileList += $file
+							continue
+						}
+					}
+				}
+				foreach ($pathExtEntry in $pathExtEntries) {
+					foreach ($file in $fileList) {
+						if ($file.BaseName -like $where -And $file.Extension -eq $pathExtEntry) {
+							$foundFileList += $file
+							continue
+						}
+					}
+				}
+				if (!$FromBatch) {
+					if (!$containsDot) {
+						foreach ($file in $fileList) {
+							if ($file.Name -like $where) {
+								$foundFileList += $file
+								continue
+							}
+						}
+					}
+				}
+			} else {
+				if ($pathCheckerEntry.IsNetworkPath) {
+					$foundFileList = $fileList | Sort
+				} else {
+					$foundFileList = $fileList
 				}
 			}
-			if (!$FromBatch -And !$withoutExtensionDone) {
-				$fileList += gci "$searchPattern" -Force -File -Filter "$where" | Select Name
-			}
-			if ($fileList) {
+			if ($foundFileList) {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
 			}
 		}
@@ -394,10 +414,20 @@ function DisplayPath {
 				}
 			}
 		}
-		$host.ui.RawUI.ForegroundColor = "DarkGray"
-		if ($where -ne "" -And $fileList) {
-			foreach ($file in $fileList) {
-				echo "`t`t`t$($file.Name)"
+		$host.ui.RawUI.ForegroundColor = "DarkCyan"
+		if (!$Verbatim -And $where -ne "" -And $foundFileList) {
+			if ($containsWildcard) {
+				if ($foundFileList -is [array]) {
+					$fileCount = $foundFileList.Length
+				} else {
+					$fileCount = 1
+				}
+				echo "`t`t`t$fileCount file(s) found:"
+				$($foundFileList | Format-Wide -AutoSize -Property Name | Out-String).Trim()
+			} else {
+				foreach ($foundFile in $foundFileList) {
+					echo "`t`t`t$($foundFile.Name)"
+				}
 			}
 		}
 		$host.ui.RawUI.ForegroundColor = $colorBefore
