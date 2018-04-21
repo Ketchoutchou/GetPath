@@ -294,7 +294,7 @@ function GetPathPrefix {
 	
 	$flags = "$($pathEntry.EntryOrder)`t"
 	if ($pathEntry.IsNetworkPath) {
-		$flags += "N"
+		$flags += "n"
 	} else {
 		$flags += "-"
 	}
@@ -391,7 +391,7 @@ function DisplayPath {
 			}
 		}
 		
-		if (!$diffMode) {
+		if ($Verbatim -Or !$diffMode) {
 			echo "$prefix$($pathCheckerEntry.OriginalPath)"
 			$i = $registryPathEntriesCount
 		} else {
