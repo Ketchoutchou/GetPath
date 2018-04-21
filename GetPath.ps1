@@ -35,6 +35,9 @@ Param(
 	[Parameter(DontShow)]
 	[switch] $FromBatch = $false,
 	
+	# Analyze PATH from registry, ignoring current context modification
+	[switch] $FromRegistry = $false,
+	
 	# Internal parameter (used if GetPath has been launched using GetPath.cmd) to retrieve PathExt environment variable value from cmd.exe.
 	[Parameter(DontShow)]
 	[string] $PathExt = "",
@@ -510,7 +513,7 @@ function Main {
 	
 	$actualPathString = $env:PATH
 
-	if ($ProcessNameOrId -ne "") {
+	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
 		if($PSVersionTable.PSVersion.Major -gt 2) {
 			$scriptRoot = $PSScriptRoot
 		} else {
@@ -596,7 +599,7 @@ function Main {
 	
 	if ($TestMode) {
 		$systemRegistryPathString = @'
-		C:\windows;;s:\;::;\\;s;s:;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
+		C:\windows;;s:\;::;\\;s;s:;C:\WINDOWS; C:\windows\;C:/windows/;c:\>;c:;c;c:\windows\\;c:\fdsf\\;\\\;c:\<;%USERPROFILE%\desktop;"c:\program files (x86)"\google;"c:\program files (x86)"\google2;  ;C:\Users\Ketchoutchou\Desktop;c:\doesnotexist;c:\dOesnotexist\ ; c:\program files;C:\windows*;*;?;|;c:|windows;c:\windows?;c:\program files (x86);%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WINDOW~1\v1.0;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;D:\Logiciels\Utilitaires\InPath;"c:\program files (x86)"; 
 '@
 		$userRegistryPathString = @'
 C:\userpath
@@ -607,7 +610,7 @@ C:\userpath
 	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
 
 	$diffMode = $false
-	if (([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
+	if ($FromRegistry -Or ([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
 		if ($userRegistryPathString -eq "") {
 			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
 		}
