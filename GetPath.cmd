@@ -5,4 +5,7 @@ if exist "%ProgramW6432%\PowerShell\pwsh.exe" (
 ) else (
 	set pwsh=C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
 )
+if defined PowerShell (
+	set pwsh=%PowerShell%
+)
 "%pwsh%" -NoProfile -ExecutionPolicy Bypass -File %~dp0%~n0.ps1 -FromBatch -PathExt "%PathExt%" %*
