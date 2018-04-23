@@ -114,7 +114,7 @@ $$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
  \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__| 2.0
 
 '@
-		exit 0
+		exit 1408
 	}
 }
 function PSVersionCheck {
@@ -584,11 +584,11 @@ function Main {
 						while (!$InputOK)
 						# will do better
 						& $scriptRoot\GetPath.ps1 -ProcessNameOrId $processId
-						exit 0
+						exit $LASTEXITCODE
 					}
 					if ($foundProcesses.Length -eq 0) {
 						Write-Warning "No process found with name containing '$ProcessNameOrId'"
-						exit -1
+						exit -3
 					}
 					$process = $foundProcesses[0]
 				} else {
@@ -604,7 +604,7 @@ function Main {
 			}
 		} else {
 			Write-Warning "$getExternalProcessPathExecutable not found. Cannot get PATH of an external process."
-			exit -1
+			exit -2
 		}
 	}
 	

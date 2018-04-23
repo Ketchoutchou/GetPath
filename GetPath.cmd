@@ -62,4 +62,4 @@ goto :RunWithPowerShell
 	
 :RunWithPowerShell
 	"%getpath_pwsh%" -NoProfile -ExecutionPolicy Bypass -File %~dp0%~n0.ps1 -FromBatch -PathExt "%PathExt%" %*
-	set "getpath_pwsh="
+	exit /b %errorlevel%
