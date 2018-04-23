@@ -6,7 +6,7 @@ if exist "%ProgramW6432%\PowerShell\pwsh.exe" (
 ) else (
 	set getpath_pwsh=C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
 )
-if defined PowerShell (
+if defined GetPath_PowerShellPath (
 	set getpath_pwsh=%PowerShell%
 )
 
