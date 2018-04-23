@@ -32,18 +32,18 @@ Param(
 	[switch] $DontCheckUnexpandedDuplicates = $false,
 
 	# Internal parameter to know if GetPath has been launched using GetPath.cmd.
-	[Parameter(DontShow)]
+	[Parameter( <# DontShow #> )] #Need to restrict script to PowerShell >=5
 	[switch] $FromBatch = $false,
 	
 	# Analyze PATH from registry, ignoring current context modification
 	[switch] $FromRegistry = $false,
 	
 	# Internal parameter (used if GetPath has been launched using GetPath.cmd) to retrieve PathExt environment variable value from cmd.exe.
-	[Parameter(DontShow)]
+	[Parameter( <# DontShow #> )] #Need to restrict script to PowerShell >=5
 	[string] $PathExt = "",
 
 	# Get PATH environment variable from another running process in real time (using process id or approximate name).
-	[Parameter(Position=0, ValueFromPipeline)]
+	[Parameter(Position = 0, ValueFromPipeline = $true)]
 	[string] $ProcessNameOrId = "",
 	
 	# Replace current context PATH environment variable with the one found in registry
@@ -51,7 +51,7 @@ Param(
 	[switch] $Reload = $false,
 	
 	# Internal parameter used for testing.
-	[Parameter(DontShow)]
+	[Parameter( <# DontShow #>)] #Need to restrict script to PowerShell >=5
 	[switch] $TestMode = $false,
 	
 	# Remove any prefix when displaying PATH entries.
@@ -76,6 +76,7 @@ if ($DebugPreference -eq "Inquire") {
 	Write-Debug "Switching DebugPreference to Continue"
 }
 
+<#  Need to restrict script to PowerShell >=5
 Class Chrono {
 	[String] $Comment
 	[DateTime] $Chrono
@@ -96,6 +97,7 @@ Class Chrono {
 		}
 	}
 }
+#>
 
 function ShowVersion {
 	if ($Version) {
@@ -397,11 +399,17 @@ function DisplayPath {
 		if (!$Verbatim -And $where -ne "") {
 			$searchPattern = $pathCheckerEntry.PristinePath
 			$foundFileList = @()
-			$chrono = [Chrono]::new("GCI", 20)
-			$fileList = gci -Force -File $searchPattern -Filter $filter
-			$chrono.Stop()
-			if (!$containsWildcard) {
-				$chrono = [Chrono]::new("Where", 20)
+			#$chrono = [Chrono]::new("GCI", 20)
+			if($PSVersionTable.PSVersion.Major -gt 2) {
+				$fileList = gci -Force -File $searchPattern -Filter $filter
+			} else {
+				$fileList = gci -Force $searchPattern -Filter $filter | where { $_.GetType().Name -eq "FileInfo" }
+			}
+			#$chrono.Stop()
+			
+			if ($filelist) {
+				if (!$containsWildcard) {
+				#$chrono = [Chrono]::new("Where", 20)
 				if ($containsDot) {
 					foreach ($file in $fileList) {
 						if ($file.Name -like $where) {
@@ -436,15 +444,16 @@ function DisplayPath {
 						}
 					}
 				}
-				$chrono.Stop()
+				#$chrono.Stop()
 			} else {
 				if ($pathCheckerEntry.IsNetworkPath) {
-					$chrono = [Chrono]::new("Sort", 20)
+					#$chrono = [Chrono]::new("Sort", 20)
 					$foundFileList = $fileList | Sort
-					$chrono.Stop()
+					#$chrono.Stop()
 				} else {
 					$foundFileList = $fileList
 				}
+			}
 			}
 			if ($foundFileList) {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
@@ -459,7 +468,11 @@ function DisplayPath {
 				echo "$prefix$($pathCheckerEntry.OriginalPath)"
 				$i++
 			} else {
-				$indexInRegistry = $registryPathEntries.IndexOf($pathCheckerEntry.OriginalPath)
+				if($PSVersionTable.PSVersion.Major -gt 2) {
+					$indexInRegistry = $registryPathEntries.IndexOf($pathCheckerEntry.OriginalPath)
+				} else {
+					$indexInRegistry = [array]::indexof($registryPathEntries, $pathCheckerEntry.OriginalPath)
+				}
 				if ($indexInRegistry -ne -1 -And $indexInRegistry -gt $i) {
 					for ($j = $i; $j -lt $indexInRegistry; $j++) {
 						$host.ui.RawUI.ForegroundColor = "Red"
@@ -516,11 +529,6 @@ function Main {
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
 	
 	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
-		if($PSVersionTable.PSVersion.Major -gt 2) {
-			$scriptRoot = $PSScriptRoot
-		} else {
-			$scriptRoot = $MyInvocation.MyCommand.Path
-		}
 		$getExternalProcessPathExecutable = "GetExternalProcessEnv.exe"
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
 			$externalProcessPathString = $null
@@ -552,7 +560,7 @@ function Main {
 				if ($foundProcesses -is [array]) {
 					if ($foundProcesses.Length -gt 1) {
 						Write-Warning "Multiple processes found with name containing '$ProcessNameOrId' (most recent first):"
-						$foundProcesses | Add-Member TryStartTime " ACCESS DENIED"
+						$foundProcesses | Add-Member -MemberType NoteProperty -Name TryStartTime -Value " ACCESS DENIED"
 						foreach ($foundProcess in $foundProcesses) {
 							if ($foundProcess.StartTime) {
 								$foundProcess.TryStartTime = $foundProcess.StartTime
@@ -562,8 +570,8 @@ function Main {
 						do {
 							try {
 								$InputOK = $true
-								[int]$pid = Read-Host "Choose a process id"
-								if ($pid -eq "") {
+								[int]$processId = Read-Host "Choose a process id"
+								if ($processId -eq "") {
 									$InputOK = $false
 									OpenProcessExplorerOffer
 								}
@@ -574,7 +582,7 @@ function Main {
 						}
 						while (!$InputOK)
 						# will do better
-						& $scriptRoot\GetPath.ps1 -ProcessNameOrId $pid
+						& $scriptRoot\GetPath.ps1 -ProcessNameOrId $processId
 						exit 0
 					}
 					if ($foundProcesses.Length -eq 0) {
@@ -696,6 +704,12 @@ C:\userpath
 		$(foreach ($ht in $pathChecker){new-object PSObject -Property $ht}) | Format-Table -AutoSize	
 	}
 #>
+}
+
+if($PSVersionTable.PSVersion.Major -gt 2) {
+	$scriptRoot = $PSScriptRoot
+} else {
+	$scriptRoot = split-path -parent $MyInvocation.MyCommand.Definition
 }
 
 try {
