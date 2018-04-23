@@ -46,6 +46,10 @@ Param(
 	[Parameter(Position=0, ValueFromPipeline)]
 	[string] $ProcessNameOrId = "",
 	
+	# Replace current context PATH environment variable with the one found in registry
+	[Alias("Refresh")]
+	[switch] $Reload = $false,
+	
 	# Internal parameter used for testing.
 	[Parameter(DontShow)]
 	[switch] $TestMode = $false,
@@ -511,8 +515,6 @@ function Main {
 	$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
 	
-	$actualPathString = $env:PATH
-
 	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
 		if($PSVersionTable.PSVersion.Major -gt 2) {
 			$scriptRoot = $PSScriptRoot
@@ -608,9 +610,17 @@ C:\userpath
 	}
 	
 	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
-
+	$expandedRegistryPathString = [System.Environment]::ExpandEnvironmentVariables($registryPathString)
+	if (!$FromBatch -And $Reload) {
+		$env:PATH = $expandedRegistryPathString
+		echo "Path environment variable (for powershell) has been reloaded from registry"
+	}
+	if (!$(Test-Path variable:actualPathString)) {
+		$actualPathString = $env:PATH
+	}
+	
 	$diffMode = $false
-	if ($FromRegistry -Or ([System.Environment]::ExpandEnvironmentVariables($registryPathString)) -eq $actualPathString) {
+	if ($FromRegistry -Or $expandedRegistryPathString -eq $actualPathString) {
 		if ($userRegistryPathString -eq "") {
 			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
 		}
