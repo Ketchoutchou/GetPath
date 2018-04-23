@@ -163,7 +163,7 @@ function ShowPathLength {
 	}
 	echo "Current PATH environment variable is $expandedPathLength character long (maximum is 2047)"
 	$host.ui.RawUI.ForegroundColor = "Gray"
-	if ($expandedPathLength -gt 4094) {
+	if ($expandedPathLength -gt 4095) {
 		Write-Error "Path too long. Not implemented yet"
 		exit -1
 	}
