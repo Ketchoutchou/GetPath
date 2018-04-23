@@ -44,10 +44,11 @@ Param(
 
 	# Get PATH environment variable from another running process in real time (using process id or approximate name).
 	[Parameter(Position = 0, ValueFromPipeline = $true)]
+	[Alias("P")]
 	[string] $ProcessNameOrId = "",
 	
 	# Replace current context PATH environment variable with the one found in registry
-	[Alias("Refresh")]
+	[Alias("Refresh", "R")]
 	[switch] $Reload = $false,
 	
 	# Internal parameter used for testing.
@@ -65,7 +66,7 @@ Param(
 	
 	# Find all occurrences of an executable in the current context PATH
 	# This parameter supports bulk search using wildcards.
-	[Alias("Which", "Search")]
+	[Alias("Which", "Search", "W")]
 	[string] $Where = ""
 )
 
