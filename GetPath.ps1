@@ -6,7 +6,7 @@ GetPath helps you detect and fix issues in your PATH environment variable on Win
 and so much more
 
 .INPUTS
-None. You cannot pipe objects to GetPath (yet!)
+Process name, id or object
 
 .OUTPUTS
 System.Int. GetPath returns a simple exit code based on the result of the analysis
@@ -46,6 +46,10 @@ Param(
 	[Parameter(Position = 0, ValueFromPipeline = $true)]
 	[Alias("P")]
 	[string] $ProcessNameOrId = "",
+	
+	# Get PATH environment variable from another running process in real time (using process object).
+	[Parameter(ValueFromPipeline = $true)]
+	[System.Diagnostics.Process] $ProcessObject,
 	
 	# Replace current context PATH environment variable with the one found in registry
 	[Alias("Refresh", "R")]
@@ -530,6 +534,9 @@ function Main {
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
 	
 	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
+		if ($ProcessObject) {
+			$ProcessNameOrId = $ProcessObject.Id
+		}
 		$getExternalProcessPathExecutable = "GetExternalProcessEnv.exe"
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
 			$externalProcessPathString = $null
