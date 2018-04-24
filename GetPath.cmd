@@ -31,9 +31,14 @@ REM we need to endlocal in order to set PATH globally (for this console)
 endlocal && call set "PATH=%PATH_HKLM%%sep%%PATH_HKCU%"
 setlocal
 
+set temp_title=YouShouldNotSeeThisSecretCode:%RANDOM%
+set temp_title_pattern=%temp_title%^*
+title=%temp_title%
+for /f "tokens=2 usebackq" %%f in (`tasklist /NH /FI "WINDOWTITLE eq %temp_title_pattern%"`) do set PID=%%f
+for /f "tokens=1 usebackq" %%f in (`tasklist /NH /FI "WINDOWTITLE eq %temp_title_pattern%"`) do set Process=%%f
+echo [45mPath environment variable for %Process% (PID:%PID%) has been reloaded from registry[0m
 title %Process% (PID:%PID%)
 
-	echo Path environment variable (for cmd.exe) has been reloaded from registry
 :RunWithPowerShell
 
 if exist "%ProgramW6432%\PowerShell\pwsh.exe" (
