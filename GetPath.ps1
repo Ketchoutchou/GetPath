@@ -390,6 +390,14 @@ function DisplayPath {
 	} else {
 		$filter = "$where*"
 	}
+	
+	if ($where -ne "") {
+		$colorBefore = $host.ui.RawUI.ForegroundColor
+		$host.ui.RawUI.ForegroundColor = "Yellow"
+		echo "Current directory has not been checked (not implemented yet)"
+		$host.ui.RawUI.ForegroundColor = $colorBefore
+	}
+	
 	foreach ($pathCheckerEntry in $pathChecker) {
 		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
@@ -630,8 +638,11 @@ C:\userpath
 	$expandedRegistryPathString = [System.Environment]::ExpandEnvironmentVariables($registryPathString)
 	if (!$FromBatch -And $Reload) {
 		$env:PATH = $expandedRegistryPathString
+		$colorBefore = $host.ui.RawUI.BackgroundColor
+		$host.ui.RawUI.BackgroundColor = "DarkMagenta"
 		$console = Get-Process -Id $pid
 		echo "Path environment variable for $($console.MainModule.ModuleName) (PID:$pid) has been reloaded from registry"
+		$host.ui.RawUI.BackgroundColor = $colorBefore
 	}
 	if (!$(Test-Path variable:actualPathString)) {
 		$actualPathString = $env:PATH
