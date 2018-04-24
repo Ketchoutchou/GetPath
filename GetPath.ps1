@@ -630,7 +630,8 @@ C:\userpath
 	$expandedRegistryPathString = [System.Environment]::ExpandEnvironmentVariables($registryPathString)
 	if (!$FromBatch -And $Reload) {
 		$env:PATH = $expandedRegistryPathString
-		echo "Path environment variable (for powershell) has been reloaded from registry"
+		$console = Get-Process -Id $pid
+		echo "Path environment variable for $($console.MainModule.ModuleName) (PID:$pid) has been reloaded from registry"
 	}
 	if (!$(Test-Path variable:actualPathString)) {
 		$actualPathString = $env:PATH
