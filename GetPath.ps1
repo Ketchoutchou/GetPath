@@ -403,9 +403,9 @@ function DisplayPath {
 			$foundFileList = @()
 			#$chrono = [Chrono]::new("GCI", 20)
 			if($PSVersionTable.PSVersion.Major -gt 2) {
-				$fileList = gci -Force -File $searchPattern -Filter $filter
+				$fileList = gci -Force -File $searchPattern -Filter $filter -ErrorAction SilentlyContinue
 			} else {
-				$fileList = gci -Force $searchPattern -Filter $filter | where { $_.GetType().Name -eq "FileInfo" }
+				$fileList = gci -Force $searchPattern -Filter $filter -ErrorAction SilentlyContinue | where { $_.GetType().Name -eq "FileInfo" }
 			}
 			#$chrono.Stop()
 			
