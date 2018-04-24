@@ -45,6 +45,7 @@ if defined GetPath_PowerShell (
 	set getpath_pwsh=%GetPath_PowerShell%
 )
 
+call "%getpath_pwsh%" -NoProfile -ExecutionPolicy Bypass -File %~dp0%~n0.ps1 -FromBatch -PathExt "%PathExt%" %*
 exit /b %errorlevel%
 
 :SetFromReg
@@ -53,5 +54,4 @@ exit /b %errorlevel%
 	for /f "usebackq skip=2 tokens=2,*" %%A in (`C:\Windows\System32\reg.exe query "%~1" /v "%~2" 2^>nul`) do (
 		set "%~3=%%B"
 	)
-	"%getpath_pwsh%" -NoProfile -ExecutionPolicy Bypass -File %~dp0%~n0.ps1 -FromBatch -PathExt "%PathExt%" %*
 	goto :eof
