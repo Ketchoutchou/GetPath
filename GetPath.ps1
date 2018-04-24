@@ -501,7 +501,11 @@ function DisplayPath {
 					$fileCount = 1
 				}
 				echo "`t`t`t$fileCount file(s) found:"
-				$($foundFileList | Format-Wide -AutoSize -Property Name | Out-String).Trim()
+				if($PSVersionTable.PSVersion.Major -gt 5) {
+					$foundFileList | Format-Wide -AutoSize -Property Name
+				} else {
+					$($foundFileList | Format-Wide -AutoSize -Property Name | Out-String).Trim()
+				}
 			} else {
 				foreach ($foundFile in $foundFileList) {
 					echo "`t`t`t$($foundFile.Name)"
