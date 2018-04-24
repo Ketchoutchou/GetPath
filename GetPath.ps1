@@ -75,6 +75,7 @@ Param(
 )
 
 Set-StrictMode -Version Latest
+#$ErrorActionPreference = "Stop"
 
 if ($DebugPreference -eq "Inquire") {
 	$DebugPreference = "Continue"
@@ -364,9 +365,6 @@ function GetPathPrefix {
 	} else {
 		$flags += "-"
 	}
-	#userpath
-	#duplicates
-	#issues
 	$flags += "`t  "
 	$flags
 }
@@ -392,7 +390,6 @@ function DisplayPath {
 	} else {
 		$filter = "$where*"
 	}
-	# TODO: where in current directory (warning: need to use .\ notation for powershell)
 	foreach ($pathCheckerEntry in $pathChecker) {
 		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
@@ -414,33 +411,8 @@ function DisplayPath {
 			
 			if ($filelist) {
 				if (!$containsWildcard) {
-				#$chrono = [Chrono]::new("Where", 20)
-				if ($containsDot) {
-					foreach ($file in $fileList) {
-						if ($file.Name -like $where) {
-							$foundFileList += $file
-							continue
-						}
-					}
-				}
-				if (!$FromBatch) {
-					foreach ($file in $fileList) {
-						if ($file.Name -like "$where.ps1") {
-							$foundFileList += $file
-							continue
-						}
-					}
-				}
-				foreach ($pathExtEntry in $pathExtEntries) {
-					foreach ($file in $fileList) {
-						if ($file.BaseName -like $where -And $file.Extension -eq $pathExtEntry) {
-							$foundFileList += $file
-							continue
-						}
-					}
-				}
-				if (!$FromBatch) {
-					if (!$containsDot) {
+					#$chrono = [Chrono]::new("Where", 20)
+					if ($containsDot) {
 						foreach ($file in $fileList) {
 							if ($file.Name -like $where) {
 								$foundFileList += $file
@@ -448,17 +420,42 @@ function DisplayPath {
 							}
 						}
 					}
-				}
-				#$chrono.Stop()
-			} else {
-				if ($pathCheckerEntry.IsNetworkPath) {
-					#$chrono = [Chrono]::new("Sort", 20)
-					$foundFileList = $fileList | Sort
+					if (!$FromBatch) {
+						foreach ($file in $fileList) {
+							if ($file.Name -like "$where.ps1") {
+								$foundFileList += $file
+								continue
+							}
+						}
+					}
+					foreach ($pathExtEntry in $pathExtEntries) {
+						foreach ($file in $fileList) {
+							if ($file.BaseName -like $where -And $file.Extension -eq $pathExtEntry) {
+								$foundFileList += $file
+								continue
+							}
+						}
+					}
+					if (!$FromBatch) {
+						if (!$containsDot) {
+							foreach ($file in $fileList) {
+								if ($file.Name -like $where) {
+									$foundFileList += $file
+									continue
+								}
+							}
+						}
+					}
 					#$chrono.Stop()
 				} else {
-					$foundFileList = $fileList
+					if ($pathCheckerEntry.IsNetworkPath) {
+						#$chrono = [Chrono]::new("Sort", 20)
+						$foundFileList = $fileList | Sort
+						#$chrono.Stop()
+					} else {
+						$foundFileList = $fileList
+					}
 				}
-			}
 			}
 			if ($foundFileList) {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
