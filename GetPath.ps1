@@ -69,7 +69,7 @@ Param(
 	[string] $RemoveEntry = "",
 	
 	# Analyze only the system PATH environment variable.
-	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the system PATH environment variable.
+	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the system PATH environment variable (requires administrative rights).
 	[Alias("Machine")]
 	[switch] $System = $false,
 	
@@ -412,7 +412,7 @@ function GetWhereResults {
 	)
 	
 	$foundFileList = @()
-	$searchPattern = $pathCheckerEntry.PristinePath
+	$searchPattern = $pathEntry.PristinePath
 	#$chrono = [Chrono]::new("GCI", 20)
 	if($PSVersionTable.PSVersion.Major -gt 2) {
 		$fileList = gci -Force -File $searchPattern -Filter $filter -ErrorAction SilentlyContinue
@@ -474,7 +474,7 @@ function GetWhereResults {
 function DisplayWhereResults {
 	#retrieve color before ?
 	$host.ui.RawUI.ForegroundColor = "DarkCyan"
-	if (!$Verbatim -And $where -ne "" And $foundFileList){
+	if (!$Verbatim -And $where -ne "" -And $foundFileList){
 		if ($containsWildcard) {
 			if ($foundFileList -is [array]) {
 				$fileCount = $foundFileList.Length
@@ -595,7 +595,7 @@ function DisplayPath {
 		for ($j = $i; $j -lt $registryPathEntriesCount; $j++) {
 			$host.ui.RawUI.ForegroundColor = "Red"
 			if ($registryPathEntries[$j] -eq "") {
-				echo "`t`t- <empty>) (not present in this context; only in registry)"
+				echo "`t`t- <empty> (not present in this context; only in registry)"
 			} else {
 				echo "`t`t- $($registryPathEntries[$j]) (not present in this context; only in registry)"
 			}
@@ -621,9 +621,9 @@ function Main {
 		Write-Warning "This functionality has not been implemented yet."
 	}
 	if ($AddEntry) {
-		echo "Should add $RemoveEntry"
+		echo "Should add $AddEntry"
 		Write-Warning "This functionality has not been implemented yet."
-	}	
+	}
 	if ($System -Or (!$System -And !$User)) {
 		$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	} else {
