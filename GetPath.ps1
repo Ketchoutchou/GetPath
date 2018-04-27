@@ -627,6 +627,10 @@ function Main {
 				} else {
 					$process = $foundProcesses
 				}
+				if (!$process) {
+					Write-Warning "No process found with name containing '$ProcessNameOrId'"
+					exit -3
+				}
 				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
 				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $process.Id
 				if ($LASTEXITCODE -eq -4) {
