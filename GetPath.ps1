@@ -56,9 +56,18 @@ Param(
 	[Alias("Refresh", "R")]
 	[switch] $Reload = $false,
 	
+	# Analyze only the system PATH environment variable.
+	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the system PATH environment variable.
+	[Alias("Machine")]
+	[switch] $System = $false,
+	
 	# Internal parameter used for testing.
 	[Parameter( <# DontShow #>)] #Need to restrict script to PowerShell >=5
 	[switch] $TestMode = $false,
+	
+	# Analyze only the user PATH environment variable.
+	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the user PATH environment variable.
+	[switch] $User = $false,
 	
 	# Remove any prefix when displaying PATH entries.
 	# Good for copy/pasting.
@@ -595,8 +604,16 @@ function OpenProcessExplorerOffer {
 function Main {
 	ShowVersion
 	PSVersionCheck
-	$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
+	if ($System -Or (!$System -And !$User)) {
+		$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+	} else {
+		$systemRegistryPathString = $null
+	}
+	if ($User -Or (!$System -And !$User)) {
+		$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
+	} else {
+		$userRegistryPathString = $null
+	}
 	
 	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
 		if ($ProcessObject) {
