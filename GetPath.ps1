@@ -36,6 +36,7 @@ Param(
 	[switch] $FromBatch = $false,
 	
 	# Analyze PATH from registry, ignoring current context modification.
+	[Alias("Registry")]
 	[switch] $FromRegistry = $false,
 	
 	# Internal parameter (used if GetPath has been launched using GetPath.cmd) to retrieve PathExt environment variable value from cmd.exe.
