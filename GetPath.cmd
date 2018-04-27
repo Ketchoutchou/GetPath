@@ -28,15 +28,15 @@ if "%PATH_HKCU%"=="" set "sep="
 
 REM call is used to expand variable inside another variable
 REM we need to endlocal in order to set PATH globally (for this console)
-
-set temp_title=YouShouldNotSeeThisSecretCode:%RANDOM%
-set temp_title_pattern=%temp_title%^*
-title=%temp_title%
-for /f "tokens=2 usebackq" %%f in (`tasklist /NH /FI "WINDOWTITLE eq %temp_title_pattern%"`) do set PID=%%f
-for /f "tokens=1 usebackq" %%f in (`tasklist /NH /FI "WINDOWTITLE eq %temp_title_pattern%"`) do set Process=%%f
-echo [45mPath environment variable for %Process% (PID:%PID%) has been reloaded from registry[0m
-title %Process% (PID:%PID%)
 endlocal && call set "PATH=%PATH_HKLM%%sep%%PATH_HKCU%" && setlocal
+
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command ^
+$colorBefore = $host.ui.RawUI.BackgroundColor; ^
+$consoleId = (Get-WmiObject Win32_Process -Filter ProcessId=$PID).ParentProcessId; ^
+$console = Get-Process -Id $consoleId; ^
+$host.ui.RawUI.BackgroundColor = """DarkMagenta"""; ^
+echo """Path environment variable for $($console.MainModule.ModuleName) (PID:$consoleId) has been reloaded from registry"""; ^
+$host.ui.RawUI.BackgroundColor = $colorBefore
 
 :RunWithPowerShell
 
