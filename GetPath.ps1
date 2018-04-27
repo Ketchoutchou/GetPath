@@ -28,6 +28,12 @@ https://github.com/Ketchoutchou/GetPath
 
 [CmdletBinding()]
 Param(
+	# Add the specified entry to the selected PATH environment variable.
+	# Requires -User or -System.
+	# Supports short names and unexpanded variables.
+	[Alias("A")]
+	[string] $AddEntry = "",
+	
 	# Do not take variable-based path entries into account.
 	[switch] $DontCheckUnexpandedDuplicates = $false,
 
@@ -55,6 +61,12 @@ Param(
 	# Replace current context PATH environment variable with the one found in registry.
 	[Alias("Refresh", "R")]
 	[switch] $Reload = $false,
+	
+	# Remove the specified entry from the selected PATH environment variable.
+	# Requires -User or -System.
+	# Supports short names and unexpanded variables.
+	[Alias("DeleteEntry")]
+	[string] $RemoveEntry = "",
 	
 	# Analyze only the system PATH environment variable.
 	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the system PATH environment variable.
@@ -604,6 +616,14 @@ function OpenProcessExplorerOffer {
 function Main {
 	ShowVersion
 	PSVersionCheck
+	if ($RemoveEntry) {
+		echo "Should remove $RemoveEntry"
+		Write-Warning "This functionality has not been implemented yet."
+	}
+	if ($AddEntry) {
+		echo "Should add $RemoveEntry"
+		Write-Warning "This functionality has not been implemented yet."
+	}	
 	if ($System -Or (!$System -And !$User)) {
 		$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	} else {
