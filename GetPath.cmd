@@ -1,6 +1,6 @@
 @echo off
 setlocal
-echo Running from cmd.exe. Consider using Powershell.exe directly for faster startup
+echo Consider using Powershell directly for faster startup
 
 if "%*"=="" (
 	goto :RunWithPowerShell
@@ -28,8 +28,6 @@ if "%PATH_HKCU%"=="" set "sep="
 
 REM call is used to expand variable inside another variable
 REM we need to endlocal in order to set PATH globally (for this console)
-endlocal && call set "PATH=%PATH_HKLM%%sep%%PATH_HKCU%"
-setlocal
 
 set temp_title=YouShouldNotSeeThisSecretCode:%RANDOM%
 set temp_title_pattern=%temp_title%^*
@@ -38,6 +36,7 @@ for /f "tokens=2 usebackq" %%f in (`tasklist /NH /FI "WINDOWTITLE eq %temp_title
 for /f "tokens=1 usebackq" %%f in (`tasklist /NH /FI "WINDOWTITLE eq %temp_title_pattern%"`) do set Process=%%f
 echo [45mPath environment variable for %Process% (PID:%PID%) has been reloaded from registry[0m
 title %Process% (PID:%PID%)
+endlocal && call set "PATH=%PATH_HKLM%%sep%%PATH_HKCU%" && setlocal
 
 :RunWithPowerShell
 

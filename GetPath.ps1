@@ -35,7 +35,7 @@ Param(
 	[Parameter( <# DontShow #> )] #Need to restrict script to PowerShell >=5
 	[switch] $FromBatch = $false,
 	
-	# Analyze PATH from registry, ignoring current context modification
+	# Analyze PATH from registry, ignoring current context modification.
 	[switch] $FromRegistry = $false,
 	
 	# Internal parameter (used if GetPath has been launched using GetPath.cmd) to retrieve PathExt environment variable value from cmd.exe.
@@ -51,7 +51,7 @@ Param(
 	[Parameter(ValueFromPipeline = $true)]
 	[System.Diagnostics.Process] $ProcessObject,
 	
-	# Replace current context PATH environment variable with the one found in registry
+	# Replace current context PATH environment variable with the one found in registry.
 	[Alias("Refresh", "R")]
 	[switch] $Reload = $false,
 	
@@ -68,7 +68,7 @@ Param(
 	[Alias("About")]
 	[switch] $Version = $false,
 	
-	# Find all occurrences of an executable in the current context PATH
+	# Find all occurrences of an executable in the current context PATH.
 	# This parameter supports bulk search using wildcards.
 	[Alias("Which", "Search", "W")]
 	[string] $Where = ""
@@ -650,6 +650,9 @@ C:\userpath
 	
 	$diffMode = $false
 	if ($FromRegistry -Or $expandedRegistryPathString -eq $actualPathString) {
+		if ($FromRegistry) {
+			Write-Warning "Registry-only analysis. Current context is ignored."
+		}
 		if ($userRegistryPathString -eq "") {
 			Write-Warning "User PATH environment variable is defined but empty" # Warn users that fix will remove user path and move it to system path
 		}
