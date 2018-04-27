@@ -687,7 +687,13 @@ C:\userpath
 		}
 		ShowPathLength $actualPathString
 		$pathString = $actualPathString
-		$diffMode = $true
+		if ($actualPathString -like "*%*") {
+			Write-Warning "Your PATH is corrupt (variables have not been properly expanded).`r`nYou may fix it by running 'GetPath -Reload'."
+			#Check if registry key is expandable (with GetValueKind)
+			exit -5
+		} else {
+			$diffMode = $true
+		}
 	}
 	if ($pathString) {
 		$pathEntries = $pathString.Split(';')
