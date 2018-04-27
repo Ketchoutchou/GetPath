@@ -76,7 +76,7 @@ Param(
 	# Internal parameter used for testing.
 	[Parameter( <# DontShow #>)] #Need to restrict script to PowerShell >=5
 	[switch] $TestMode = $false,
-	
+
 	# Analyze only the user PATH environment variable.
 	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the user PATH environment variable.
 	[switch] $User = $false,
@@ -410,7 +410,7 @@ function GetWhereResults {
 	Param (
 		[parameter(Mandatory=$true)] $pathEntry
 	)
-	
+
 	$foundFileList = @()
 	$searchPattern = $pathEntry.PristinePath
 	#$chrono = [Chrono]::new("GCI", 20)
@@ -420,7 +420,7 @@ function GetWhereResults {
 		$fileList = gci -Force $searchPattern -Filter $filter -ErrorAction SilentlyContinue | where { $_.GetType().Name -eq "FileInfo" }
 	}
 	#$chrono.Stop()
-	
+
 	if ($filelist) {
 		if (!$containsWildcard) {
 			#$chrono = [Chrono]::new("Where", 20)
@@ -474,7 +474,7 @@ function GetWhereResults {
 function DisplayWhereResults {
 	#retrieve color before ?
 	$host.ui.RawUI.ForegroundColor = "DarkCyan"
-	if (!$Verbatim -And $where -ne "" -And $foundFileList){
+	if (!$Verbatim -And $where -ne "" -And $foundFileList) {
 		if ($containsWildcard) {
 			if ($foundFileList -is [array]) {
 				$fileCount = $foundFileList.Length
@@ -599,7 +599,6 @@ function DisplayPath {
 			} else {
 				echo "`t`t- $($registryPathEntries[$j]) (not present in this context; only in registry)"
 			}
-			
 		}
 		$host.ui.RawUI.ForegroundColor = $colorBefore
 	}
