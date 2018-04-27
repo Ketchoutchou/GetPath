@@ -202,11 +202,19 @@ function GetShortPathEntry {
 
 	if ($pathEntry) {
 		$pathEntry = PrepareForTestPath($pathEntry)
-		if ($pathEntry -And (Test-Path $pathEntry -IsValid) -And (Test-Path $pathEntry)) {
-			$FSO = New-Object -ComObject Scripting.FileSystemObject
-			return $FSO.GetFolder($pathEntry).ShortPath
-		} else {
-			return $pathEntry.TrimEnd('\')
+		try {
+			if ($pathEntry -And (Test-Path $pathEntry -IsValid) -And (Test-Path $pathEntry -ErrorAction Stop)) {
+				$FSO = New-Object -ComObject Scripting.FileSystemObject
+				return $FSO.GetFolder($pathEntry).ShortPath
+			} else {
+				return $pathEntry.TrimEnd('\')
+			}
+		} catch {
+			if ($_Exception.Message -eq "Access is denied") {
+				return $pathEntry.TrimEnd('\')
+			} else {
+				throw
+			}
 		}
 	} else {
 		return $null
@@ -320,10 +328,18 @@ function ListIssues {
 		if ($pathCheckerEntry.OriginalPath.EndsWith('\')){
 			$pathCheckerEntry.Issues.Add("ShouldNotEndWithBackslash") | Out-Null
 		}
-		if (!(Test-Path $pathCheckerEntry.OriginalPath -IsValid)){
-			$pathCheckerEntry.Issues.Add("ShouldBeValid") | Out-Null
-		} elseif (!(Test-Path (NewPrepareForTestPath($pathCheckerEntry.OriginalPath)))){
-			$pathCheckerEntry.Issues.Add("MustExist") | Out-Null
+		try {
+			if (!(Test-Path $pathCheckerEntry.OriginalPath -IsValid)){
+				$pathCheckerEntry.Issues.Add("ShouldBeValid") | Out-Null
+			} elseif (!(Test-Path (NewPrepareForTestPath($pathCheckerEntry.OriginalPath)) -ErrorAction Stop)){
+				$pathCheckerEntry.Issues.Add("MustExist") | Out-Null
+			}
+		} catch {
+			if ($_Exception.Message -eq "Access is denied") {
+				$pathCheckerEntry.Issues.Add("AccessDenied") | Out-Null
+			} else {
+				throw
+			}
 		}
 	}
 	[Array]$issuesList = foreach ($pathCheckerEntry in $pathChecker) {$pathCheckerEntry.Issues}
