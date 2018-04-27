@@ -385,6 +385,102 @@ function GetPathPrefix {
 	$flags += "`t  "
 	$flags
 }
+function GetWhereResults {
+	Param (
+		[parameter(Mandatory=$true)] $pathEntry
+	)
+	
+	$foundFileList = @()
+	$searchPattern = $pathCheckerEntry.PristinePath
+	#$chrono = [Chrono]::new("GCI", 20)
+	if($PSVersionTable.PSVersion.Major -gt 2) {
+		$fileList = gci -Force -File $searchPattern -Filter $filter -ErrorAction SilentlyContinue
+	} else {
+		$fileList = gci -Force $searchPattern -Filter $filter -ErrorAction SilentlyContinue | where { $_.GetType().Name -eq "FileInfo" }
+	}
+	#$chrono.Stop()
+	
+	if ($filelist) {
+		if (!$containsWildcard) {
+			#$chrono = [Chrono]::new("Where", 20)
+			if ($containsDot) {
+				foreach ($file in $fileList) {
+					if ($file.Name -like $where) {
+						$foundFileList += $file
+						continue
+					}
+				}
+			}
+			if (!$FromBatch) {
+				foreach ($file in $fileList) {
+					if ($file.Name -like "$where.ps1") {
+						$foundFileList += $file
+						continue
+					}
+				}
+			}
+			foreach ($pathExtEntry in $pathExtEntries) {
+				foreach ($file in $fileList) {
+					if ($file.BaseName -like $where -And $file.Extension -eq $pathExtEntry) {
+						$foundFileList += $file
+						continue
+					}
+				}
+			}
+			if (!$FromBatch) {
+				if (!$containsDot) {
+					foreach ($file in $fileList) {
+						if ($file.Name -like $where) {
+							$foundFileList += $file
+							continue
+						}
+					}
+				}
+			}
+			#$chrono.Stop()
+		} else {
+			if ($pathEntry.IsNetworkPath) {
+				#$chrono = [Chrono]::new("Sort", 20)
+				$foundFileList = $fileList | Sort
+				#$chrono.Stop()
+			} else {
+				$foundFileList = $fileList
+			}
+		}
+	}
+	$foundFileList
+}
+function DisplayWhereResults {
+	#retrieve color before ?
+	$host.ui.RawUI.ForegroundColor = "DarkCyan"
+	if (!$Verbatim -And $where -ne "" And $foundFileList){
+		if ($containsWildcard) {
+			if ($foundFileList -is [array]) {
+				$fileCount = $foundFileList.Length
+			} else {
+				$fileCount = 1
+			}
+			echo "`t`t`t$fileCount file(s) found:"
+			if ($PSVersionTable.PSVersion.Major -gt 5) {
+				$foundFileList | Format-Wide -AutoSize -Property Name
+			} else {
+				$($foundFileList | Format-Wide -AutoSize -Property Name | Out-String).Trim()
+			}
+		} else {
+			foreach ($foundFile in $foundFileList) {
+				if (!$exactWhereFound) {
+					$host.ui.RawUI.ForegroundColor = "Cyan"
+				}
+				echo "`t`t`t$($foundFile.Name)"
+				if (!$exactWhereFound) {
+					$host.ui.RawUI.ForegroundColor = "DarkCyan"
+					$script:exactWhereFound = $true
+				}
+			}
+		}
+	}
+	$host.ui.RawUI.ForegroundColor = $colorBefore
+}
 function DisplayPath {
 	Param (
 		[parameter(Mandatory=$true)] [System.Collections.ArrayList]$pathChecker,
@@ -395,26 +491,37 @@ function DisplayPath {
 	$i = 0
 	$registryPathEntries = [System.Environment]::ExpandEnvironmentVariables($registryPathString).Split(';')
 	$registryPathEntriesCount = $registryPathEntries.Length
-	if ($FromBatch) {
-		$pathExtEntries = $PathExt.Split(';')
-	} else {
-		$pathExtEntries = $env:PathExt.Split(';')
-	}
-	$containsDot = $where -like "*.*"
-	$containsWildcard = $where -match "\*"
-	if ($containsWildcard) {
-		$filter = $where
-	} else {
-		$filter = "$where*"
-	}
 	
 	if ($where -ne "") {
-		$colorBefore = $host.ui.RawUI.ForegroundColor
-		$host.ui.RawUI.ForegroundColor = "Yellow"
-		echo "Current directory has not been checked (not implemented yet)"
-		$host.ui.RawUI.ForegroundColor = $colorBefore
+		if ($FromBatch) {
+			$pathExtEntries = $PathExt.Split(';')
+		} else {
+			$pathExtEntries = $env:PathExt.Split(';')
+		}
+		$containsDot = $where -like "*.*"
+		$containsWildcard = $where -match "\*"
+		if ($containsWildcard) {
+			$filter = $where
+		} else {
+			$filter = "$where*"
+		}
+		$script:exactWhereFound = $false
+		if ($FromBatch) {
+			$currentDirEntry = @{
+				PristinePath = $pwd
+				IsNetworkPath = $false #to fix
+				# need more ?
+			}
+			$foundFileList = GetWhereResults $currentDirEntry
+			if ($foundFileList -And !$Verbatim) {
+				$colorBefore = $host.ui.RawUI.ForegroundColor
+				$host.ui.RawUI.ForegroundColor = "Magenta"
+				echo "`t`t  $pwd (current directory; not in your actual PATH)"
+				DisplayWhereResults
+				$host.ui.RawUI.ForegroundColor = $colorBefore
+			}
+		}
 	}
-	
 	foreach ($pathCheckerEntry in $pathChecker) {
 		$colorBefore = $host.ui.RawUI.ForegroundColor
 		if (!$Verbatim) {
@@ -424,64 +531,7 @@ function DisplayPath {
 		}
 		
 		if (!$Verbatim -And $where -ne "") {
-			$searchPattern = $pathCheckerEntry.PristinePath
-			$foundFileList = @()
-			#$chrono = [Chrono]::new("GCI", 20)
-			if($PSVersionTable.PSVersion.Major -gt 2) {
-				$fileList = gci -Force -File $searchPattern -Filter $filter -ErrorAction SilentlyContinue
-			} else {
-				$fileList = gci -Force $searchPattern -Filter $filter -ErrorAction SilentlyContinue | where { $_.GetType().Name -eq "FileInfo" }
-			}
-			#$chrono.Stop()
-			
-			if ($filelist) {
-				if (!$containsWildcard) {
-					#$chrono = [Chrono]::new("Where", 20)
-					if ($containsDot) {
-						foreach ($file in $fileList) {
-							if ($file.Name -like $where) {
-								$foundFileList += $file
-								continue
-							}
-						}
-					}
-					if (!$FromBatch) {
-						foreach ($file in $fileList) {
-							if ($file.Name -like "$where.ps1") {
-								$foundFileList += $file
-								continue
-							}
-						}
-					}
-					foreach ($pathExtEntry in $pathExtEntries) {
-						foreach ($file in $fileList) {
-							if ($file.BaseName -like $where -And $file.Extension -eq $pathExtEntry) {
-								$foundFileList += $file
-								continue
-							}
-						}
-					}
-					if (!$FromBatch) {
-						if (!$containsDot) {
-							foreach ($file in $fileList) {
-								if ($file.Name -like $where) {
-									$foundFileList += $file
-									continue
-								}
-							}
-						}
-					}
-					#$chrono.Stop()
-				} else {
-					if ($pathCheckerEntry.IsNetworkPath) {
-						#$chrono = [Chrono]::new("Sort", 20)
-						$foundFileList = $fileList | Sort
-						#$chrono.Stop()
-					} else {
-						$foundFileList = $fileList
-					}
-				}
-			}
+			$foundFileList = GetWhereResults $pathCheckerEntry
 			if ($foundFileList) {
 				$host.ui.RawUI.ForegroundColor = "Magenta"
 			}
@@ -514,27 +564,7 @@ function DisplayPath {
 				}
 			}
 		}
-		$host.ui.RawUI.ForegroundColor = "DarkCyan"
-		if (!$Verbatim -And $where -ne "" -And $foundFileList) {
-			if ($containsWildcard) {
-				if ($foundFileList -is [array]) {
-					$fileCount = $foundFileList.Length
-				} else {
-					$fileCount = 1
-				}
-				echo "`t`t`t$fileCount file(s) found:"
-				if($PSVersionTable.PSVersion.Major -gt 5) {
-					$foundFileList | Format-Wide -AutoSize -Property Name
-				} else {
-					$($foundFileList | Format-Wide -AutoSize -Property Name | Out-String).Trim()
-				}
-			} else {
-				foreach ($foundFile in $foundFileList) {
-					echo "`t`t`t$($foundFile.Name)"
-				}
-			}
-		}
-		$host.ui.RawUI.ForegroundColor = $colorBefore
+		DisplayWhereResults
 	}
 	if ($i -lt $registryPathEntriesCount) {
 		for ($j = $i; $j -lt $registryPathEntriesCount; $j++) {
