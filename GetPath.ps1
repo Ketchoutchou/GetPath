@@ -538,7 +538,11 @@ function DisplayPath {
 		}
 		
 		if ($Verbatim -Or !$diffMode) {
-			echo "$prefix$($pathCheckerEntry.OriginalPath)"
+			if ($pathCheckerEntry.OriginalPath -eq "") {
+				echo "$prefix<empty>"
+			} else {
+				echo "$prefix$($pathCheckerEntry.OriginalPath)"
+			}
 			$i = $registryPathEntriesCount
 		} else {
 			if ($i -lt $registryPathEntriesCount -And $pathCheckerEntry.OriginalPath -eq $registryPathEntries[$i]) {
@@ -569,7 +573,12 @@ function DisplayPath {
 	if ($i -lt $registryPathEntriesCount) {
 		for ($j = $i; $j -lt $registryPathEntriesCount; $j++) {
 			$host.ui.RawUI.ForegroundColor = "Red"
-			echo "`t`t- $($registryPathEntries[$j]) (not present in this context; only in registry)"
+			if ($registryPathEntries[$j] -eq "") {
+				echo "`t`t- <empty>) (not present in this context; only in registry)"
+			} else {
+				echo "`t`t- $($registryPathEntries[$j]) (not present in this context; only in registry)"
+			}
+			
 		}
 		$host.ui.RawUI.ForegroundColor = $colorBefore
 	}
