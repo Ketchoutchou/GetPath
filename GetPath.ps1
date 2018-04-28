@@ -29,7 +29,7 @@ https://github.com/Ketchoutchou/GetPath
 [CmdletBinding()]
 Param(
 	# Add the specified entry to the selected PATH environment variable.
-	# Requires -User or -System.
+	# Requires -ToUserPath or -ToSystemPath.
 	# Supports short names and unexpanded variables.
 	[Alias("A")]
 	[string] $AddEntry = "",
@@ -48,30 +48,37 @@ Param(
 	# Internal parameter (used if GetPath has been launched using GetPath.cmd) to retrieve PathExt environment variable value from cmd.exe.
 	[Parameter( <# DontShow #> )] #Need to restrict script to PowerShell >=5
 	[string] $PathExt = "",
+	
+	# Analyze PATH from string parameter
+	# Can be set from pipeline
+	[Parameter(ValueFromPipeline = $true)]
+	[string] $PathString = "",
 
 	# Get PATH environment variable from another running process in real time (using process id or approximate name).
-	[Parameter(Position = 0, ValueFromPipeline = $true)]
+	[Parameter(Position = 0)]
 	[Alias("P")]
 	[string] $ProcessNameOrId = "",
 	
 	# Get PATH environment variable from another running process in real time (using process object).
+	# Can be set from pipeline
 	[Parameter(ValueFromPipeline = $true)]
 	[System.Diagnostics.Process] $ProcessObject,
 	
 	# Replace current context PATH environment variable with the one found in registry.
+	# If launched using GetPath.cmd, only -Reload is supported
 	[Alias("Refresh", "R")]
 	[switch] $Reload = $false,
 	
 	# Remove the specified entry from the selected PATH environment variable.
-	# Requires -User or -System.
+	# Requires -ToUserPath or -ToSystemPath.
 	# Supports short names and unexpanded variables.
 	[Alias("DeleteEntry")]
 	[string] $RemoveEntry = "",
 	
 	# Analyze only the system PATH environment variable.
 	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the system PATH environment variable (requires administrative rights).
-	[Alias("Machine")]
-	[switch] $System = $false,
+	[Alias("System", "ToMachinePath", "Machine")]
+	[switch] $ToSystemPath = $false,
 	
 	# Internal parameter used for testing.
 	[Parameter( <# DontShow #>)] #Need to restrict script to PowerShell >=5
@@ -79,11 +86,12 @@ Param(
 
 	# Analyze only the user PATH environment variable.
 	# If -AddEntry or -RemoveEntry is set, it will add or remove the entry to the user PATH environment variable.
-	[switch] $User = $false,
+	[Alias("User")]
+	[switch] $ToUserPath = $false,
 	
 	# Remove any prefix when displaying PATH entries.
 	# Good for copy/pasting.
-	[Alias("Porcelain", "NoPrefix")]
+	[Alias("Porcelain")]
 	[switch] $Verbatim = $false,
 	
 	# Show the current version number
@@ -138,7 +146,7 @@ $$ |$$$$\ $$  __$$\\_$$  _|  $$$$$$$  |\____$$\\_$$  _|  $$  __$$\
 $$ |\_$$ |$$$$$$$$ | $$ |    $$  ____/ $$$$$$$ | $$ |    $$ |  $$ |
 $$ |  $$ |$$   ____| $$ |$$\ $$ |     $$  __$$ | $$ |$$\ $$ |  $$ |
 \$$$$$$  |\$$$$$$$\  \$$$$  |$$ |     \$$$$$$$ | \$$$$  |$$ |  $$ |
- \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__| 2.0
+ \______/  \_______|  \____/ \__|      \_______|  \____/ \__|  \__| 2.5
 
 '@
 		exit 1408
@@ -616,23 +624,18 @@ function Main {
 	ShowVersion
 	PSVersionCheck
 	if ($RemoveEntry) {
-		echo "Should remove $RemoveEntry"
-		Write-Warning "This functionality has not been implemented yet."
+		$FromRegistry = $true
+		echo "Pretending to remove $RemoveEntry"
 	}
 	if ($AddEntry) {
-		echo "Should add $AddEntry"
-		Write-Warning "This functionality has not been implemented yet."
+		$FromRegistry = $true
+		echo "Pretending to add $AddEntry"
 	}
-	if ($System -Or (!$System -And !$User)) {
-		$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-	} else {
-		$systemRegistryPathString = $null
+	if (($AddEntry -Or $RemoveEntry) -And $FromBatch -And $Reload) {
+		Write-Warning "Cannot reload PATH after adding/removing entries when launched using GetPath.cmd"
 	}
-	if ($User -Or (!$System -And !$User)) {
-		$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
-	} else {
-		$userRegistryPathString = $null
-	}
+	$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
 	
 	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
 		if ($ProcessObject) {
@@ -718,6 +721,11 @@ function Main {
 			Write-Warning "$getExternalProcessPathExecutable not found. Cannot get PATH of an external process."
 			exit -2
 		}
+	}
+	
+	if ($PathString) {
+		Write-Warning "Parameter-only analysis. Current context is ignored"
+		$actualPathString = $PathString
 	}
 	
 	if ($TestMode) {

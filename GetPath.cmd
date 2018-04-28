@@ -1,6 +1,6 @@
 @echo off
 setlocal
-echo Consider using PowerShell directly for faster startup.
+echo Consider using PowerShell directly for faster startup and better behavior.
 
 if "%*"=="" (
 	goto :RunWithPowerShell
