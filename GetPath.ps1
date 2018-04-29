@@ -39,7 +39,7 @@ Param(
 
 	# Internal parameter to know if GetPath has been launched using GetPath.cmd.
 	[Parameter( <# DontShow #> )] #Need to restrict script to PowerShell >=5
-	[switch] $FromBatch = $false,
+	[switch] $LaunchedFromBatch = $false,
 	
 	# Analyze PATH from registry, ignoring current context modification.
 	[Alias("Registry")]
@@ -52,17 +52,19 @@ Param(
 	# Analyze PATH from string parameter
 	# Can be set from pipeline
 	[Parameter(ValueFromPipeline = $true)]
-	[string] $PathString = "",
+	[Alias("String")]
+	[string] $FromString = "",
 
 	# Get PATH environment variable from another running process in real time (using process id or approximate name).
 	[Parameter(Position = 0)]
-	[Alias("P")]
-	[string] $ProcessNameOrId = "",
+	[Alias("ProcessNameOrId", "P")]
+	[string] $FromProcessNameOrId = "",
 	
 	# Get PATH environment variable from another running process in real time (using process object).
 	# Can be set from pipeline
 	[Parameter(ValueFromPipeline = $true)]
-	[System.Diagnostics.Process] $ProcessObject,
+	[Alias("ProcessObject")]
+	[System.Diagnostics.Process] $FromProcessObject,
 	
 	# Replace current context PATH environment variable with the one found in registry.
 	# If launched using GetPath.cmd, only -Reload is supported
@@ -440,7 +442,7 @@ function GetWhereResults {
 					}
 				}
 			}
-			if (!$FromBatch) {
+			if (!$LaunchedFromBatch) {
 				foreach ($file in $fileList) {
 					if ($file.Name -like "$where.ps1") {
 						$foundFileList += $file
@@ -456,7 +458,7 @@ function GetWhereResults {
 					}
 				}
 			}
-			if (!$FromBatch) {
+			if (!$LaunchedFromBatch) {
 				if (!$containsDot) {
 					foreach ($file in $fileList) {
 						if ($file.Name -like $where) {
@@ -522,7 +524,7 @@ function DisplayPath {
 	$registryPathEntriesCount = $registryPathEntries.Length
 	
 	if ($where -ne "") {
-		if ($FromBatch) {
+		if ($LaunchedFromBatch) {
 			$pathExtEntries = $PathExt.Split(';')
 		} else {
 			$pathExtEntries = $env:PathExt.Split(';')
@@ -535,7 +537,7 @@ function DisplayPath {
 			$filter = "$where*"
 		}
 		$script:exactWhereFound = $false
-		if ($FromBatch) {
+		if ($LaunchedFromBatch) {
 			$currentDirEntry = @{
 				PristinePath = $pwd
 				IsNetworkPath = $false #to fix
@@ -631,24 +633,25 @@ function Main {
 		$FromRegistry = $true
 		echo "Pretending to add $AddEntry"
 	}
-	if (($AddEntry -Or $RemoveEntry) -And $FromBatch -And $Reload) {
+	if (($AddEntry -Or $RemoveEntry) -And $LaunchedFromBatch -And $Reload) {
 		Write-Warning "Cannot reload PATH after adding/removing entries when launched using GetPath.cmd"
 	}
 	$systemRegistryPathString = GetPathFromRegistry "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	$userRegistryPathString = GetPathFromRegistry "HKCU:\Environment"
 	
-	if (!$FromRegistry -And $ProcessNameOrId -ne "") {
-		if ($ProcessObject) {
-			$ProcessNameOrId = $ProcessObject.Id
-		}
+	if ($FromProcessObject) {
+		$FromProcessNameOrId = $FromProcessObject.Id
+	}
+	
+	if (!$FromRegistry -And $FromProcessNameOrId -ne "") {
 		$getExternalProcessPathExecutable = "GetExternalProcessEnv.exe"
 		if (Test-Path $scriptRoot\$getExternalProcessPathExecutable) {
 			$externalProcessPathString = $null
 			$exitCode = -666
-			if ($ProcessNameOrId -match '^\d+$') {
-				$process = Get-Process -Id $ProcessNameOrId
+			if ($FromProcessNameOrId -match '^\d+$') {
+				$process = Get-Process -Id $FromProcessNameOrId
 				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
-				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $ProcessNameOrId
+				$externalProcessPathString = & $scriptRoot\$getExternalProcessPathExecutable $FromProcessNameOrId
 				$exitCode = $LASTEXITCODE
 			}
 			if ($exitCode -eq -4) {
@@ -659,19 +662,19 @@ function Main {
 				$actualPathString = $externalProcessPathString
 			} else {
 				try {
-					$foundProcesses = Get-Process $ProcessNameOrId -ErrorAction 'Stop'
+					$foundProcesses = Get-Process $FromProcessNameOrId -ErrorAction 'Stop'
 				} catch {
 					$processList = Get-Process
 					$foundProcesses = @()
 					foreach ($process in $processList) {
-						if ($process.Name -like "*$ProcessNameOrId*") {
+						if ($process.Name -like "*$FromProcessNameOrId*") {
 							$foundProcesses += $process
 						}
 					}
 				}
 				if ($foundProcesses -is [array]) {
 					if ($foundProcesses.Length -gt 1) {
-						Write-Warning "Multiple processes found with name containing '$ProcessNameOrId' (most recent first):"
+						Write-Warning "Multiple processes found with name containing '$FromProcessNameOrId' (most recent first):"
 						$foundProcesses | Add-Member -MemberType NoteProperty -Name TryStartTime -Value " ACCESS DENIED"
 						foreach ($foundProcess in $foundProcesses) {
 							if ($foundProcess.StartTime) {
@@ -694,11 +697,11 @@ function Main {
 						}
 						while (!$InputOK)
 						# will do better
-						& $scriptRoot\GetPath.ps1 -ProcessNameOrId $processId
+						& $scriptRoot\GetPath.ps1 -FromProcessNameOrId $processId
 						exit $LASTEXITCODE
 					}
 					if ($foundProcesses.Length -eq 0) {
-						Write-Warning "No process found with name containing '$ProcessNameOrId'"
+						Write-Warning "No process found with name containing '$FromProcessNameOrId'"
 						exit -3
 					}
 					$process = $foundProcesses[0]
@@ -706,7 +709,7 @@ function Main {
 					$process = $foundProcesses
 				}
 				if (!$process) {
-					Write-Warning "No process found with name containing '$ProcessNameOrId'"
+					Write-Warning "No process found with name containing '$FromProcessNameOrId'"
 					exit -3
 				}
 				Write-Warning "Analyzing process $($process.Name) (PID $($process.Id))"
@@ -723,9 +726,9 @@ function Main {
 		}
 	}
 	
-	if ($PathString) {
+	if ($FromString -And !$FromProcessObject) {
 		Write-Warning "Parameter-only analysis. Current context is ignored"
-		$actualPathString = $PathString
+		$actualPathString = $FromString
 	}
 	
 	if ($TestMode) {
@@ -740,7 +743,7 @@ C:\userpath
 	
 	$registryPathString = JoinSystemAndUserPath $systemRegistryPathString $userRegistryPathString
 	$expandedRegistryPathString = [System.Environment]::ExpandEnvironmentVariables($registryPathString)
-	if (!$FromBatch -And $Reload) {
+	if (!$LaunchedFromBatch -And $Reload) {
 		$env:PATH = $expandedRegistryPathString
 		$colorBefore = $host.ui.RawUI.BackgroundColor
 		$host.ui.RawUI.BackgroundColor = "DarkMagenta"
@@ -763,7 +766,7 @@ C:\userpath
 		ShowPathLength $registryPathString
 		$pathString = $registryPathString
 	} else {
-		if ($ProcessNameOrId -ne "") {
+		if ($FromProcessNameOrId -ne "") {
 			Write-Warning "In the context of $($process.Name) (PID $($process.Id)), PATH is different from the one stored in registry" # Warn users that there will be no fix
 		} else {
 			Write-Warning "In this context, PATH is different from the one stored in registry" # Warn users that fix will be only applied to current context

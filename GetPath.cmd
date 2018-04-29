@@ -49,7 +49,7 @@ if defined GetPath_PowerShell (
 	set getpath_pwsh=%GetPath_PowerShell%
 )
 
-call "%getpath_pwsh%" -NoProfile -ExecutionPolicy Bypass -File %~dp0%~n0.ps1 -FromBatch -PathExt "%PathExt%" %*
+call "%getpath_pwsh%" -NoProfile -ExecutionPolicy Bypass -File %~dp0%~n0.ps1 -LaunchedFromBatch -PathExt "%PathExt%" %*
 exit /b %errorlevel%
 
 :SetFromReg
